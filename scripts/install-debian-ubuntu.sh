@@ -4,6 +4,7 @@ set -Eeuo pipefail
 REPO_URL="${REPO_URL:-https://github.com/Schello805/Elternzeugnis.git}"
 APP_DIR="${APP_DIR:-/opt/elternzeugnis}"
 APP_USER="${APP_USER:-elternzeugnis}"
+SERVICE_USER="${SERVICE_USER:-}"
 SERVICE_NAME="${SERVICE_NAME:-elternzeugnis}"
 APP_HOST="${APP_HOST:-0.0.0.0}"
 APP_PORT="${APP_PORT:-4147}"
@@ -60,8 +61,20 @@ install_node() {
 
 prepare_user() {
   log "Systembenutzer vorbereiten"
-  if ! id "${APP_USER}" >/dev/null 2>&1; then
-    useradd --system --home "${APP_DIR}" --shell /usr/sbin/nologin "${APP_USER}"
+  local run_user
+  run_user="$(runtime_user)"
+  if [[ "${run_user}" != "root" ]] && ! id "${run_user}" >/dev/null 2>&1; then
+    useradd --system --home "${APP_DIR}" --shell /usr/sbin/nologin "${run_user}"
+  fi
+}
+
+runtime_user() {
+  if [[ -n "${SERVICE_USER}" ]]; then
+    printf '%s' "${SERVICE_USER}"
+  elif [[ "${APP_DIR}" == "/root" || "${APP_DIR}" == /root/* ]]; then
+    printf 'root'
+  else
+    printf '%s' "${APP_USER}"
   fi
 }
 
@@ -113,6 +126,8 @@ build_app() {
 
 install_service() {
   log "systemd-Service einrichten"
+  local run_user
+  run_user="$(runtime_user)"
   cat >"/etc/systemd/system/${SERVICE_NAME}.service" <<SERVICE
 [Unit]
 Description=Elternzeugnis
@@ -120,8 +135,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=${APP_USER}
-Group=${APP_USER}
+User=${run_user}
+Group=${run_user}
 WorkingDirectory=${APP_DIR}
 Environment=NODE_ENV=production
 ExecStart=/usr/bin/node ${APP_DIR}/server/index.mjs
@@ -133,7 +148,7 @@ WantedBy=multi-user.target
 SERVICE
 
   mkdir -p "${APP_DIR}/data"
-  chown -R "${APP_USER}:${APP_USER}" "${APP_DIR}"
+  chown -R "${run_user}:${run_user}" "${APP_DIR}"
   systemctl daemon-reload
   systemctl enable "${SERVICE_NAME}"
   systemctl restart "${SERVICE_NAME}"

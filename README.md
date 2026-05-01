@@ -116,10 +116,13 @@ Das Update-Skript:
 - zieht `origin/main`
 - installiert Abhängigkeiten per `npm ci`
 - baut die App neu
+- aktualisiert die systemd-Service-Datei passend zum aktuellen `APP_DIR`
 - startet den systemd-Service neu
 - prüft Service, Healthcheck und Frontend
 
 Das Update überschreibt bestehende SMTP- oder Erinnerungsdaten nicht. Ältere Standardwerte werden aber automatisch auf den Netzwerkbetrieb migriert: `HOST=127.0.0.1` wird zu `HOST=0.0.0.0`, `PORT=4174` wird zu `PORT=4147`. Eigene abweichende Ports bleiben erhalten.
+
+Hinweis: Empfohlen ist `/opt/elternzeugnis`. Wenn die App bewusst unter `/root/Elternzeugnis` betrieben wird, schreibt das Skript den systemd-Service passend als `root`, weil ein normaler Systembenutzer nicht durch das `/root` Verzeichnis navigieren darf.
 
 ## Erinnerungen per E-Mail
 

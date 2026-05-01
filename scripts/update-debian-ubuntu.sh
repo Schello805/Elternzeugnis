@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 APP_DIR="${APP_DIR:-/opt/elternzeugnis}"
 APP_USER="${APP_USER:-elternzeugnis}"
+SERVICE_USER="${SERVICE_USER:-}"
 SERVICE_NAME="${SERVICE_NAME:-elternzeugnis}"
 APP_HOST="${APP_HOST:-0.0.0.0}"
 APP_PORT="${APP_PORT:-4147}"
@@ -29,6 +30,24 @@ check_installation() {
   [[ -d "${APP_DIR}/.git" ]] || fail "${APP_DIR} ist kein Git-Checkout. Bitte zuerst install-debian-ubuntu.sh ausführen."
   command -v systemctl >/dev/null || fail "systemd wurde nicht gefunden."
   command -v npm >/dev/null || fail "npm wurde nicht gefunden."
+}
+
+runtime_user() {
+  if [[ -n "${SERVICE_USER}" ]]; then
+    printf '%s' "${SERVICE_USER}"
+  elif [[ "${APP_DIR}" == "/root" || "${APP_DIR}" == /root/* ]]; then
+    printf 'root'
+  else
+    printf '%s' "${APP_USER}"
+  fi
+}
+
+prepare_runtime_user() {
+  local run_user
+  run_user="$(runtime_user)"
+  if [[ "${run_user}" != "root" ]] && ! id "${run_user}" >/dev/null 2>&1; then
+    useradd --system --home "${APP_DIR}" --shell /usr/sbin/nologin "${run_user}"
+  fi
 }
 
 backup_data() {
@@ -107,12 +126,40 @@ build_app() {
   npm --prefix "${APP_DIR}" ci
   npm --prefix "${APP_DIR}" run build
   mkdir -p "${APP_DIR}/data"
-  chown -R "${APP_USER}:${APP_USER}" "${APP_DIR}"
+  local run_user
+  run_user="$(runtime_user)"
+  chown -R "${run_user}:${run_user}" "${APP_DIR}"
+}
+
+write_service() {
+  log "systemd-Service aktualisieren"
+  local run_user
+  run_user="$(runtime_user)"
+  cat >"/etc/systemd/system/${SERVICE_NAME}.service" <<SERVICE
+[Unit]
+Description=Elternzeugnis
+After=network.target
+
+[Service]
+Type=simple
+User=${run_user}
+Group=${run_user}
+WorkingDirectory=${APP_DIR}
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node ${APP_DIR}/server/index.mjs
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+  systemctl daemon-reload
+  systemctl enable "${SERVICE_NAME}" >/dev/null
 }
 
 restart_service() {
   log "Service neu starten"
-  systemctl daemon-reload
   systemctl restart "${SERVICE_NAME}"
 }
 
@@ -144,10 +191,12 @@ verify_update() {
 main() {
   need_root "$@"
   check_installation
+  prepare_runtime_user
   backup_data
   update_code
   ensure_runtime_env
   build_app
+  write_service
   restart_service
   verify_update
 }

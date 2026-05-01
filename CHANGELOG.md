@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.10
+
+- Update-Skript schreibt die systemd-Service-Datei passend zum aktuellen `APP_DIR` neu
+- Installations- und Update-Skript behandeln Installationen unter `/root/...` korrekt
+- Service-Benutzer kann über `SERVICE_USER` explizit gesetzt werden
+- README um Hinweis zu `/root/Elternzeugnis` ergänzt
+- Versionsnummer erhöht
+
 ## 0.1.9
 
 - Update-Skript migriert alte lokale Standardwerte auf LXC-Netzwerkbetrieb
