@@ -1,0 +1,527 @@
+:root {
+  color: #18211f;
+  background: #f7f4ed;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  align-items: center;
+  background: rgba(255, 252, 245, 0.94);
+  border-bottom: 1px solid #e4ddce;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  padding: 14px clamp(16px, 4vw, 42px);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.brand {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.brand-mark,
+.legal-icon {
+  align-items: center;
+  background: #24594c;
+  border-radius: 8px;
+  color: white;
+  display: inline-flex;
+  height: 46px;
+  justify-content: center;
+  width: 46px;
+}
+
+.brand strong,
+.brand small {
+  display: block;
+}
+
+.brand small {
+  color: #66736d;
+  font-size: 0.83rem;
+  margin-top: 2px;
+}
+
+.topnav,
+.action-row,
+.site-footer nav,
+.site-footer div,
+.site-footer a {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.topnav a,
+.topnav button,
+.site-footer a,
+.site-footer button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #24594c;
+  display: inline-flex;
+  gap: 7px;
+  padding: 8px;
+  text-decoration: none;
+}
+
+.topnav .active {
+  background: #e5efe9;
+  border-radius: 8px;
+}
+
+main {
+  flex: 1;
+}
+
+.workspace {
+  display: grid;
+  gap: 28px;
+  grid-template-columns: minmax(0, 1.06fr) minmax(360px, 0.94fr);
+  margin: 0 auto;
+  max-width: 1460px;
+  padding: 28px clamp(14px, 4vw, 42px) 36px;
+}
+
+.editor-panel {
+  min-width: 0;
+}
+
+.section-title {
+  align-items: flex-start;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.eyebrow {
+  color: #a4552f;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin: 0 0 6px;
+  text-transform: uppercase;
+}
+
+h1 {
+  font-size: clamp(2rem, 4vw, 4.2rem);
+  line-height: 1;
+  margin: 0;
+  max-width: 760px;
+}
+
+.primary-button,
+.icon-button {
+  align-items: center;
+  border: 0;
+  border-radius: 8px;
+  display: inline-flex;
+  font-weight: 800;
+  gap: 9px;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 16px;
+}
+
+.primary-button {
+  background: #24594c;
+  color: white;
+}
+
+.icon-button {
+  background: #fffaf0;
+  border: 1px solid #dfd5c1;
+  color: #24594c;
+  width: 48px;
+}
+
+.form-grid,
+.text-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+label {
+  color: #3a4742;
+  display: grid;
+  font-size: 0.9rem;
+  font-weight: 800;
+  gap: 7px;
+}
+
+input,
+select,
+textarea {
+  background: #fffdf7;
+  border: 1px solid #d9d0bd;
+  border-radius: 8px;
+  color: #18211f;
+  min-height: 48px;
+  padding: 11px 13px;
+}
+
+textarea {
+  min-height: 108px;
+  resize: vertical;
+}
+
+.design-picker {
+  border: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0;
+  padding: 0;
+}
+
+.design-picker legend {
+  color: #3a4742;
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+
+.design-picker button {
+  align-items: center;
+  background: #fffdf7;
+  border: 1px solid #d9d0bd;
+  border-radius: 8px;
+  display: inline-flex;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 13px;
+}
+
+.design-picker .selected,
+.grade-buttons .selected {
+  border-color: #24594c;
+  box-shadow: 0 0 0 3px #c9ded5;
+}
+
+.swatch {
+  border-radius: 999px;
+  display: inline-block;
+  height: 18px;
+  width: 18px;
+}
+
+.swatch.classic {
+  background: #24594c;
+}
+
+.swatch.colorful {
+  background: linear-gradient(135deg, #e45d4f, #f4c15d 48%, #2887a8);
+}
+
+.swatch.chalk {
+  background: #203f3a;
+  border: 2px solid #f4f0df;
+}
+
+.grade-list {
+  display: grid;
+  gap: 12px;
+}
+
+.grade-card {
+  background: #fffdf7;
+  border: 1px solid #e0d6c5;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.grade-card h2 {
+  font-size: 1.05rem;
+  margin: 0 0 4px;
+}
+
+.grade-card p {
+  color: #5f6d67;
+  margin: 0;
+}
+
+.grade-buttons {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(6, minmax(44px, 1fr));
+}
+
+.grade-buttons button {
+  background: #f7f1e5;
+  border: 1px solid #d8cdb9;
+  border-radius: 8px;
+  color: #24302d;
+  font-size: 1.25rem;
+  font-weight: 900;
+  height: 48px;
+}
+
+.advice,
+.pedagogy-box {
+  align-items: flex-start;
+  background: #edf6f2;
+  border: 1px solid #c7ded3;
+  border-radius: 8px;
+  color: #21483f;
+  display: flex;
+  gap: 9px;
+  padding: 10px 12px;
+}
+
+.pedagogy-box {
+  margin: 16px 0;
+}
+
+.pedagogy-box p {
+  margin: 4px 0 0;
+}
+
+.certificate {
+  align-self: start;
+  background: #fffdf7;
+  border: 1px solid #d6c7a9;
+  border-radius: 8px;
+  box-shadow: 0 18px 50px rgba(67, 52, 31, 0.12);
+  color: #17221f;
+  min-height: 920px;
+  padding: clamp(24px, 4vw, 46px);
+  position: sticky;
+  top: 92px;
+}
+
+.certificate.colorful {
+  border-top: 14px solid #e45d4f;
+  box-shadow: inset 0 0 0 7px #fff1bf, 0 18px 50px rgba(67, 52, 31, 0.12);
+}
+
+.certificate.chalk {
+  background: #203f3a;
+  border-color: #d6dccf;
+  color: #fff7df;
+}
+
+.certificate-header {
+  border-bottom: 3px double currentColor;
+  padding-bottom: 18px;
+  text-align: center;
+}
+
+.certificate-header p,
+.certificate-header span {
+  margin: 0;
+}
+
+.certificate-header h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  line-height: 1;
+  margin: 12px 0;
+}
+
+.certificate-grades {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 26px 0;
+}
+
+.certificate-row {
+  align-items: center;
+  border-bottom: 1px solid currentColor;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  min-height: 38px;
+}
+
+.certificate-row strong {
+  align-items: center;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  display: inline-flex;
+  height: 34px;
+  justify-content: center;
+  min-width: 34px;
+}
+
+.certificate-notes {
+  display: grid;
+  gap: 18px;
+}
+
+.certificate-notes strong,
+.certificate-advice strong {
+  display: block;
+  font-size: 1.05rem;
+  margin-bottom: 6px;
+}
+
+.certificate-notes p,
+.certificate-advice p {
+  line-height: 1.55;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.certificate-advice {
+  background: rgba(36, 89, 76, 0.1);
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  margin-top: 22px;
+  padding: 14px;
+}
+
+.certificate-advice.positive {
+  background: rgba(244, 193, 93, 0.2);
+}
+
+.certificate-footer {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  margin-top: 42px;
+}
+
+.legal-page {
+  margin: 0 auto;
+  max-width: 760px;
+  padding: 64px 22px;
+}
+
+.legal-page h1 {
+  margin: 18px 0;
+}
+
+.legal-page p {
+  color: #485752;
+  font-size: 1.1rem;
+  line-height: 1.7;
+}
+
+.site-footer {
+  align-items: center;
+  background: #18211f;
+  color: #f7f1e5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 18px clamp(16px, 4vw, 42px);
+}
+
+.site-footer a,
+.site-footer button {
+  color: #f7d58a;
+}
+
+.site-footer span {
+  color: #bdc9c4;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 980px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .certificate {
+    position: static;
+  }
+}
+
+@media (max-width: 680px) {
+  .topbar,
+  .section-title,
+  .certificate-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .topnav {
+    justify-content: space-between;
+  }
+
+  .form-grid,
+  .text-grid,
+  .certificate-grades {
+    grid-template-columns: 1fr;
+  }
+
+  .grade-buttons {
+    grid-template-columns: repeat(3, minmax(64px, 1fr));
+  }
+
+  .action-row {
+    justify-content: space-between;
+  }
+}
+
+@media print {
+  body {
+    background: white;
+  }
+
+  .topbar,
+  .editor-panel,
+  .site-footer {
+    display: none;
+  }
+
+  .workspace {
+    display: block;
+    padding: 0;
+  }
+
+  .certificate {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    min-height: auto;
+    padding: 18mm;
+    position: static;
+  }
+}
