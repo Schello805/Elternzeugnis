@@ -28,6 +28,20 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 3px solid #f0b84d;
+  outline-offset: 3px;
+}
+
 .app-shell {
   min-height: 100vh;
   display: flex;
@@ -143,6 +157,158 @@ main {
 .module-tabs .active {
   background: #24594c;
   color: white;
+}
+
+.dashboard {
+  display: grid;
+  gap: 22px;
+}
+
+.dashboard-hero {
+  background:
+    linear-gradient(110deg, rgba(36, 89, 76, 0.95), rgba(198, 93, 59, 0.9)),
+    #24594c;
+  border-radius: 8px;
+  color: white;
+  min-height: 320px;
+  padding: clamp(26px, 6vw, 72px);
+}
+
+.dashboard-hero .eyebrow,
+.dashboard-hero p {
+  color: #fff3dc;
+}
+
+.dashboard-hero h1 {
+  max-width: 780px;
+}
+
+.dashboard-hero p {
+  font-size: 1.08rem;
+  line-height: 1.7;
+  max-width: 720px;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.dashboard-cards {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.dashboard-card {
+  background: #fffdf7;
+  border: 1px solid #ded3bf;
+  border-radius: 8px;
+  color: #18211f;
+  display: grid;
+  gap: 8px;
+  min-height: 172px;
+  padding: 18px;
+  text-align: left;
+}
+
+.dashboard-card svg {
+  color: #24594c;
+}
+
+.dashboard-card strong,
+.dashboard-card span {
+  display: block;
+}
+
+.dashboard-card span {
+  color: #68746f;
+  line-height: 1.45;
+}
+
+.child-mode {
+  display: grid;
+  place-items: center;
+}
+
+.child-card {
+  background: #fffdf7;
+  border: 1px solid #ded3bf;
+  border-radius: 8px;
+  box-shadow: 0 18px 50px rgba(67, 52, 31, 0.12);
+  max-width: 980px;
+  padding: clamp(20px, 4vw, 42px);
+  width: 100%;
+}
+
+.progress-track {
+  background: #eadfcb;
+  border-radius: 999px;
+  height: 12px;
+  margin: 20px 0;
+  overflow: hidden;
+}
+
+.progress-track span {
+  background: #24594c;
+  display: block;
+  height: 100%;
+}
+
+.child-question {
+  background: #edf6f2;
+  border: 1px solid #c5dbd1;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  padding: 18px;
+}
+
+.child-question strong {
+  display: block;
+  font-size: clamp(1.5rem, 4vw, 2.6rem);
+}
+
+.child-question p {
+  color: #3d514b;
+  font-size: 1.1rem;
+  line-height: 1.55;
+  margin: 8px 0 0;
+}
+
+.big-grade-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.big-grade-grid button {
+  background: #fffaf0;
+  border: 2px solid #d8cdb9;
+  border-radius: 8px;
+  color: #24302d;
+  min-height: 108px;
+}
+
+.big-grade-grid .selected {
+  background: #24594c;
+  border-color: #24594c;
+  color: white;
+}
+
+.big-grade-grid span,
+.big-grade-grid small {
+  display: block;
+}
+
+.big-grade-grid span {
+  font-size: 2.35rem;
+  font-weight: 950;
+}
+
+.big-grade-grid small {
+  font-weight: 850;
 }
 
 h1 {
@@ -273,11 +439,12 @@ textarea {
 
 .certificate-sheet {
   background: #fffdf7;
-  border: 1px solid #d1bf9f;
+  border: 12px solid #d1bf9f;
   border-radius: 8px;
   box-shadow: 0 18px 50px rgba(67, 52, 31, 0.12);
   min-height: 900px;
   padding: clamp(22px, 4vw, 44px);
+  position: relative;
 }
 
 .certificate-sheet.design-rainbow {
@@ -311,6 +478,55 @@ textarea {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 0;
   padding: 0;
+}
+
+.design-preview-picker button {
+  align-items: stretch;
+  flex-direction: column;
+  min-height: 86px;
+  padding: 8px;
+}
+
+.design-preview {
+  background: #fffdf7;
+  border: 1px solid #d1bf9f;
+  border-radius: 6px;
+  display: grid;
+  gap: 4px;
+  height: 42px;
+  padding: 7px;
+  width: 100%;
+}
+
+.design-preview span,
+.design-preview i {
+  background: currentColor;
+  border-radius: 999px;
+  display: block;
+  height: 5px;
+}
+
+.design-preview i {
+  opacity: 0.45;
+  width: 70%;
+}
+
+.design-preview.rainbow {
+  border-color: #d94f43;
+  box-shadow: inset 0 0 0 4px #f0b84d;
+  color: #2f8bb2;
+}
+
+.design-preview.forest {
+  background: #f7fbf1;
+  border-color: #8aa16d;
+  color: #24594c;
+}
+
+.design-preview.space {
+  background: #172034;
+  border-color: #9fb8df;
+  color: #fff8dc;
 }
 
 .design-picker legend {
@@ -362,7 +578,19 @@ textarea {
 .certificate-head {
   border-bottom: 3px double #24302d;
   padding-bottom: 18px;
+  position: relative;
   text-align: center;
+}
+
+.certificate-badge {
+  align-items: center;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  display: inline-flex;
+  font-weight: 900;
+  gap: 7px;
+  margin-bottom: 10px;
+  padding: 8px 14px;
 }
 
 .certificate-head p,
@@ -424,11 +652,31 @@ textarea {
 }
 
 .inline-advice {
-  align-items: center;
-  display: flex;
+  align-items: flex-start;
+  display: grid;
   gap: 7px;
   grid-column: 1 / -1;
   margin: 0;
+}
+
+.wish-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.wish-chips strong {
+  flex: 1 0 100%;
+}
+
+.wish-chips button {
+  background: #fffaf0;
+  border: 1px solid #d8cdb9;
+  border-radius: 999px;
+  color: #24594c;
+  min-height: 36px;
+  padding: 0 12px;
 }
 
 .certificate-fields {
@@ -441,6 +689,21 @@ textarea {
   grid-column: 1 / -1;
 }
 
+.certificate-signature {
+  align-items: end;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  margin-top: 30px;
+}
+
+.certificate-signature strong {
+  border-top: 2px solid currentColor;
+  min-width: 220px;
+  padding-top: 8px;
+  text-align: center;
+}
+
 .page-grid,
 .history-layout {
   display: grid;
@@ -450,6 +713,12 @@ textarea {
 
 .wide-panel {
   grid-column: 1 / -1;
+}
+
+.setup-panel p {
+  color: #5f6d67;
+  line-height: 1.6;
+  max-width: 760px;
 }
 
 .panel-title {
@@ -554,9 +823,41 @@ textarea {
 }
 
 .form-message,
-.empty-state {
+.empty-state,
+.success-message {
   color: #5f6d67;
   line-height: 1.6;
+}
+
+.success-message {
+  background: #edf6f2;
+  border: 1px solid #c5dbd1;
+  border-radius: 8px;
+  color: #21483f;
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.guided-empty {
+  align-items: start;
+  background: #fffaf0;
+  border: 1px dashed #cdbf9f;
+  border-radius: 8px;
+  color: #51605b;
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  line-height: 1.6;
+  padding: 22px;
+}
+
+.guided-empty strong {
+  color: #18211f;
+  font-size: 1.1rem;
+}
+
+.guided-empty p {
+  margin: 0;
 }
 
 .chart-card {
@@ -639,7 +940,8 @@ textarea {
 @media (max-width: 1050px) {
   .certificate-layout,
   .page-grid,
-  .history-layout {
+  .history-layout,
+  .dashboard-cards {
     grid-template-columns: 1fr;
   }
 
@@ -669,14 +971,35 @@ textarea {
     flex: 1 1 150px;
   }
 
+  .module-tabs {
+    bottom: 0;
+    box-shadow: 0 -10px 28px rgba(67, 52, 31, 0.1);
+    left: 0;
+    margin: 0;
+    padding: 8px;
+    position: sticky;
+    z-index: 8;
+  }
+
+  .dashboard-hero {
+    min-height: auto;
+  }
+
   .form-grid,
   .chart-grid,
   .certificate-fields {
     grid-template-columns: 1fr;
   }
 
-  .grade-picker {
+  .grade-picker,
+  .big-grade-grid {
     grid-template-columns: repeat(3, minmax(58px, 1fr));
+  }
+
+  .certificate-signature,
+  .hero-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 

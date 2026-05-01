@@ -10,9 +10,13 @@ Kinder sollen nicht einfach „bewerten“, sondern ausdruecken koennen, was ihn
 
 - Zeugnis-Editor fuer Tablet, Desktop und Smartphone
 - direkte Eingabe der Noten im Zeugnisdesign
+- Start-Dashboard fuer die wichtigsten Wege
+- Kindermodus mit grosser Touch-Bedienung
 - Stammdaten fuer Kinder, Eltern und Bezugspersonen
 - Verlauf ueber gespeicherte Zeugnisse pro Jahr
 - grafische Auswertungen mit Durchschnitt und Kategorien
+- gefuehrte Leerzustaende und Erfolgsmeldungen
+- paedagogische Wunschbausteine bei schwierigen Bewertungen
 - Bewertungsbereiche wie Geduld, Zuhoeren, Spielzeit, Fairness und Lernhilfe
 - Paedagogische Hinweise bei Note 5 oder 6
 - Zeugnisvorschau im druckbaren Format
@@ -21,6 +25,7 @@ Kinder sollen nicht einfach „bewerten“, sondern ausdruecken koennen, was ihn
 - SMTP-Konfiguration und Testmail direkt im lokalen Frontend
 - PDF-Export ohne Cloud-Dienst
 - mehrere Zeugnisdesigns
+- Design-Auswahl mit Mini-Vorschau
 - Export und Import der lokalen App-Daten
 - Lokale Speicherung im Browser, keine Serveruebertragung
 - Footer mit GitHub-Link und automatischer Versions-/Revisionsanzeige

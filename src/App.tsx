@@ -2,13 +2,17 @@ import {
   BarChart3,
   BookOpen,
   CalendarClock,
+  CheckCircle2,
   Download,
+  FileText,
   Github,
   HeartHandshake,
   Mail,
+  Pencil,
   Plus,
   Save,
   Sparkles,
+  Star,
   Trash2,
   Upload,
   UserRound,
@@ -34,7 +38,7 @@ import { appBranch, appBuildTime, appRevision, appVersion } from "./generated/ve
 const githubUrl = "https://github.com/Schello805/Elternzeugnis";
 const storageKey = "elternzeugnis:v2";
 
-type View = "certificate" | "people" | "history" | "reminders";
+type View = "home" | "certificate" | "child" | "people" | "history" | "reminders";
 type Frequency = "once" | "monthly" | "yearly";
 type Design = "classic" | "rainbow" | "forest" | "space";
 
@@ -215,7 +219,7 @@ function loadData(): AppData {
 
 export function App() {
   const [data, setData] = useState<AppData>(loadData);
-  const [view, setView] = useState<View>("certificate");
+  const [view, setView] = useState<View>("home");
 
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(data));
@@ -267,12 +271,16 @@ function AppWorkspace({
   return (
     <div className="app-workspace">
       <nav className="module-tabs" aria-label="Arbeitsbereiche">
+        <Tab active={view === "home"} onClick={() => setView("home")} icon={<Star size={19} />} label="Start" />
+        <Tab active={view === "child"} onClick={() => setView("child")} icon={<Pencil size={19} />} label="Kindermodus" />
         <Tab active={view === "certificate"} onClick={() => setView("certificate")} icon={<BookOpen size={19} />} label="Zeugnis" />
         <Tab active={view === "people"} onClick={() => setView("people")} icon={<UsersRound size={19} />} label="Stammdaten" />
         <Tab active={view === "history"} onClick={() => setView("history")} icon={<BarChart3 size={19} />} label="Verlauf" />
         <Tab active={view === "reminders"} onClick={() => setView("reminders")} icon={<CalendarClock size={19} />} label="Erinnerungen" />
       </nav>
 
+      {view === "home" ? <Dashboard data={data} setView={setView} /> : null}
+      {view === "child" ? <ChildModeScreen data={data} setData={setData} setView={setView} /> : null}
       {view === "certificate" ? <CertificateScreen data={data} setData={setData} /> : null}
       {view === "people" ? <PeopleScreen data={data} setData={setData} /> : null}
       {view === "history" ? <HistoryScreen data={data} setData={setData} setView={setView} /> : null}
@@ -300,6 +308,169 @@ function Tab({
   );
 }
 
+function Dashboard({ data, setView }: { data: AppData; setView: (view: View) => void }) {
+  const lastCertificate = data.certificates[0];
+  const draftHasText = Boolean(
+    data.draft.strengths || data.draft.wishes || data.draft.favoriteMoment || data.draft.signature,
+  );
+
+  return (
+    <section className="dashboard">
+      <div className="dashboard-hero">
+        <p className="eyebrow">Lokale Familien-App</p>
+        <h1>Ein kleines Ritual fuer mehr Verbindung</h1>
+        <p>
+          Kinder fuellen ein Elternzeugnis aus, Eltern sehen Entwicklung ueber die Jahre und
+          Erinnerungen helfen, das Ritual nicht zu vergessen.
+        </p>
+        <div className="hero-actions">
+          <button className="primary-button" onClick={() => setView("child")}>
+            <Pencil size={19} /> Kindermodus starten
+          </button>
+          <button className="secondary-button" onClick={() => setView("certificate")}>
+            <BookOpen size={19} /> Zeugnis bearbeiten
+          </button>
+        </div>
+      </div>
+
+      <div className="dashboard-cards">
+        <button className="dashboard-card" onClick={() => setView("child")}>
+          <Pencil size={25} />
+          <strong>Neues Zeugnis</strong>
+          <span>Grosse Buttons, wenig Ablenkung.</span>
+        </button>
+        <button className="dashboard-card" onClick={() => setView(draftHasText ? "certificate" : "people")}>
+          <FileText size={25} />
+          <strong>{draftHasText ? "Entwurf fortsetzen" : "Stammdaten anlegen"}</strong>
+          <span>{draftHasText ? "Der aktuelle Entwurf wartet." : "Kinder und Eltern vorbereiten."}</span>
+        </button>
+        <button className="dashboard-card" onClick={() => setView("history")}>
+          <BarChart3 size={25} />
+          <strong>{data.certificates.length} gespeicherte Zeugnisse</strong>
+          <span>{lastCertificate ? `Zuletzt: ${lastCertificate.year}` : "Noch keine Auswertung."}</span>
+        </button>
+        <button className="dashboard-card" onClick={() => setView("reminders")}>
+          <CalendarClock size={25} />
+          <strong>Erinnerungen</strong>
+          <span>SMTP einrichten und Termine planen.</span>
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function ChildModeScreen({
+  data,
+  setData,
+  setView,
+}: {
+  data: AppData;
+  setData: Dispatch<SetStateAction<AppData>>;
+  setView: (view: View) => void;
+}) {
+  const child = data.children.find((person) => person.id === data.draft.childId) || data.children[0];
+  const parent = data.parents.find((person) => person.id === data.draft.parentId) || data.parents[0];
+  const [focusIndex, setFocusIndex] = useState(0);
+  const category = categories[focusIndex];
+
+  const updateGrade = (grade: number) => {
+    setData((current) => ({
+      ...current,
+      draft: {
+        ...current.draft,
+        grades: { ...current.draft.grades, [category.id]: grade },
+      },
+    }));
+  };
+
+  const next = () => setFocusIndex((current) => Math.min(current + 1, categories.length - 1));
+  const previous = () => setFocusIndex((current) => Math.max(current - 1, 0));
+
+  return (
+    <section className="child-mode">
+      <div className="child-card">
+        <p className="eyebrow">Kindermodus</p>
+        <h1>
+          {child?.name || "Kind"} bewertet {parent?.name || "Elternteil"}
+        </h1>
+        <div className="progress-track">
+          <span style={{ width: `${((focusIndex + 1) / categories.length) * 100}%` }} />
+        </div>
+        <div className="child-question">
+          <strong>{category.title}</strong>
+          <p>{category.childHint}</p>
+        </div>
+        <div className="big-grade-grid">
+          {[1, 2, 3, 4, 5, 6].map((grade) => (
+            <button
+              key={grade}
+              className={data.draft.grades[category.id] === grade ? "selected" : ""}
+              onClick={() => updateGrade(grade)}
+            >
+              <span>{grade}</span>
+              <small>{gradeCopy(grade)}</small>
+            </button>
+          ))}
+        </div>
+        {data.draft.grades[category.id] >= 5 ? <WishChips category={category} setData={setData} /> : null}
+        <div className="hero-actions">
+          <button className="secondary-button" onClick={previous} disabled={focusIndex === 0}>
+            Zurueck
+          </button>
+          {focusIndex === categories.length - 1 ? (
+            <button className="primary-button" onClick={() => setView("certificate")}>
+              <CheckCircle2 size={19} /> Zum Zeugnis
+            </button>
+          ) : (
+            <button className="primary-button" onClick={next}>
+              Weiter
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function gradeCopy(grade: number) {
+  return ["", "Super", "Gut", "Okay", "Ueben", "Mehr Hilfe", "Reden"][grade];
+}
+
+function WishChips({
+  category,
+  setData,
+}: {
+  category: Category;
+  setData: Dispatch<SetStateAction<AppData>>;
+}) {
+  const wishes = [
+    `Ich wuensche mir bei ${category.title.toLowerCase()} mehr Zeit.`,
+    `Bitte frag mich, was ich brauche.`,
+    `Lass uns dafuer eine kleine Abmachung machen.`,
+  ];
+
+  const addWish = (wish: string) => {
+    setData((current) => ({
+      ...current,
+      draft: {
+        ...current.draft,
+        wishes: current.draft.wishes ? `${current.draft.wishes}\n${wish}` : wish,
+      },
+    }));
+  };
+
+  return (
+    <div className="wish-chips">
+      <strong>Das kannst du freundlich sagen:</strong>
+      {wishes.map((wish) => (
+        <button key={wish} onClick={() => addWish(wish)}>
+          {wish}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function CertificateScreen({
   data,
   setData,
@@ -310,6 +481,7 @@ function CertificateScreen({
   const child = data.children.find((person) => person.id === data.draft.childId) || data.children[0];
   const parent = data.parents.find((person) => person.id === data.draft.parentId) || data.parents[0];
   const lowGrades = categories.filter((category) => data.draft.grades[category.id] >= 5);
+  const [feedback, setFeedback] = useState("");
 
   const updateDraft = <Key extends keyof Certificate>(key: Key, value: Certificate[Key]) => {
     setData((current) => ({ ...current, draft: { ...current.draft, [key]: value } }));
@@ -334,6 +506,7 @@ function CertificateScreen({
         draft: newCertificate(certificate.childId, certificate.parentId),
       };
     });
+    setFeedback("Zeugnis gespeichert. Im Verlauf findest du es wieder.");
   };
 
   const exportPdf = async () => {
@@ -351,6 +524,7 @@ function CertificateScreen({
     const y = (pageHeight - height) / 2;
     pdf.addImage(image, "PNG", x, y, width, height);
     pdf.save(`Elternzeugnis-${child?.name || "Kind"}-${parent?.name || "Eltern"}.pdf`);
+    setFeedback("PDF wurde erstellt.");
   };
 
   return (
@@ -386,7 +560,7 @@ function CertificateScreen({
           Datum
           <input type="date" value={data.draft.date} onChange={(event) => updateDraft("date", event.target.value)} />
         </label>
-        <fieldset className="design-picker">
+        <fieldset className="design-picker design-preview-picker">
           <legend>Design</legend>
           {(["classic", "rainbow", "forest", "space"] as Design[]).map((design) => (
             <button
@@ -395,7 +569,10 @@ function CertificateScreen({
               onClick={() => updateDraft("design", design)}
               type="button"
             >
-              <span className={`swatch ${design}`} />
+              <span className={`design-preview ${design}`}>
+                <span />
+                <i />
+              </span>
               {designLabel(design)}
             </button>
           ))}
@@ -417,10 +594,15 @@ function CertificateScreen({
             </p>
           </div>
         ) : null}
+        {feedback ? <p className="success-message">{feedback}</p> : null}
       </aside>
 
       <article className={`certificate-sheet design-${data.draft.design}`}>
         <header className="certificate-head">
+          <div className="certificate-badge">
+            <Star size={20} />
+            Familienzeugnis
+          </div>
           <p>Schuljahr {data.draft.year || "____ / ____"}</p>
           <h2>Zeugnis fuer {parent?.name || "____________"}</h2>
           <span>ausgestellt von {child?.name || "____________"}</span>
@@ -446,9 +628,11 @@ function CertificateScreen({
                 ))}
               </div>
               {data.draft.grades[category.id] >= 5 ? (
-                <p className="inline-advice">
-                  <Sparkles size={16} /> {category.advice}
-                </p>
+                <div className="inline-advice">
+                  <Sparkles size={16} />
+                  <span>{category.advice}</span>
+                  <WishChips category={category} setData={setData} />
+                </div>
               ) : null}
             </section>
           ))}
@@ -475,6 +659,10 @@ function CertificateScreen({
             <input value={data.draft.signature} onChange={(event) => updateDraft("signature", event.target.value)} />
           </label>
         </div>
+        <footer className="certificate-signature">
+          <span>{data.draft.date}</span>
+          <strong>{data.draft.signature || "Unterschrift"}</strong>
+        </footer>
       </article>
     </section>
   );
@@ -510,6 +698,16 @@ function PeopleScreen({
 
   return (
     <section className="page-grid">
+      <section className="panel wide-panel setup-panel">
+        <div>
+          <p className="eyebrow">Vorbereitung</p>
+          <h1>Stammdaten fuer das Familienritual</h1>
+          <p>
+            Lege hier Kinder, Eltern und E-Mail-Adressen an. Danach ist der Kindermodus einfacher,
+            weil Kinder nur noch auswaehlen und bewerten muessen.
+          </p>
+        </div>
+      </section>
       <PersonList
         title="Kinder"
         icon={<UserRound size={24} />}
@@ -706,7 +904,14 @@ function HistoryScreen({
             </ChartCard>
           </div>
         ) : (
-          <p className="empty-state">Noch kein Zeugnis gespeichert. Speichere zuerst ein Zeugnis, dann entstehen hier Verlauf und Grafiken.</p>
+          <div className="guided-empty">
+            <FileText size={34} />
+            <strong>Noch kein Zeugnis gespeichert</strong>
+            <p>Starte im Kindermodus oder bearbeite ein Zeugnis. Nach dem Speichern entstehen hier Verlauf und Grafiken.</p>
+            <button className="primary-button" onClick={() => setView("child")}>
+              <Pencil size={19} /> Kindermodus starten
+            </button>
+          </div>
         )}
       </div>
 
@@ -997,7 +1202,11 @@ function ReminderScreen({ data }: { data: AppData }) {
               </article>
             ))
           ) : (
-            <p className="empty-state">Noch keine Erinnerung geplant.</p>
+            <div className="guided-empty">
+              <CalendarClock size={34} />
+              <strong>Noch keine Erinnerung geplant</strong>
+              <p>Speichere links einen Termin, damit das Elternzeugnis jedes Jahr wieder ins Familienleben passt.</p>
+            </div>
           )}
         </div>
       </section>
