@@ -1,6 +1,6 @@
 {
   "name": "elternzeugnis",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "private": true,
   "description": "Eine tabletfreundliche Zeugnis-App, mit der Kinder wertschätzende Elternzeugnisse erstellen können.",
   "type": "module",

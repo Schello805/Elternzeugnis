@@ -37,6 +37,10 @@ function smtpConfigured() {
   return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
 }
 
+function validEmail(email) {
+  return typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 function smtpConfig() {
   return {
     host: process.env.SMTP_HOST || "",
@@ -128,16 +132,24 @@ function reminderMail(reminder) {
 }
 
 async function sendReminder(reminder) {
+  if (!validEmail(reminder.email)) return { ok: false, error: "Bitte eine gültige E-Mail-Adresse eintragen." };
   const transport = createTransport();
   if (!transport) return { ok: false, error: "SMTP ist nicht konfiguriert." };
   const mail = reminderMail(reminder);
-  await transport.sendMail({
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
-    to: reminder.email,
-    subject: mail.subject,
-    text: mail.text,
-  });
-  return { ok: true };
+  try {
+    await transport.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: reminder.email,
+      subject: mail.subject,
+      text: mail.text,
+    });
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "E-Mail konnte nicht versendet werden.",
+    };
+  }
 }
 
 async function processDueReminders() {
@@ -197,6 +209,10 @@ app.post("/api/reminders", async (request, response) => {
     response.status(400).json({ error: "E-Mail, Datum und Uhrzeit sind erforderlich." });
     return;
   }
+  if (!validEmail(body.email)) {
+    response.status(400).json({ error: "Bitte eine gültige E-Mail-Adresse eintragen." });
+    return;
+  }
 
   const reminders = await readReminders();
   const reminder = {
@@ -220,12 +236,19 @@ app.post("/api/reminders", async (request, response) => {
 });
 
 app.post("/api/reminders/test", async (request, response) => {
-  const result = await sendReminder({
-    childName: request.body?.childName || "ein Kind",
-    recipientName: request.body?.recipientName || "die Eltern",
-    email: request.body?.email,
-  });
-  response.status(result.ok ? 200 : 400).json(result);
+  try {
+    const result = await sendReminder({
+      childName: request.body?.childName || "ein Kind",
+      recipientName: request.body?.recipientName || "die Eltern",
+      email: request.body?.email,
+    });
+    response.status(result.ok ? 200 : 400).json(result);
+  } catch (error) {
+    response.status(500).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "Testmail konnte nicht versendet werden.",
+    });
+  }
 });
 
 app.delete("/api/reminders/:id", async (request, response) => {

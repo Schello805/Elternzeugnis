@@ -1037,6 +1037,20 @@ function ChartCard({ title, children }: { title: string; children: ReactElement 
   );
 }
 
+async function readApiJson(response: Response) {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text) as { error?: string; ok?: boolean };
+  } catch {
+    return { error: text };
+  }
+}
+
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 function ReminderScreen({ data }: { data: AppData }) {
   const [smtpReady, setSmtpReady] = useState(false);
   const [reminders, setReminders] = useState<Reminder[]>([]);
@@ -1087,6 +1101,10 @@ function ReminderScreen({ data }: { data: AppData }) {
   const selectedParent = data.parents.find((person) => person.id === form.parentId) || firstParent;
 
   const saveReminder = async () => {
+    if (!isValidEmail(form.email)) {
+      setMessage("Bitte eine gültige E-Mail-Adresse eintragen.");
+      return;
+    }
     const response = await fetch("/api/reminders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1099,7 +1117,12 @@ function ReminderScreen({ data }: { data: AppData }) {
         frequency: form.frequency,
       }),
     });
-    setMessage(response.ok ? "Erinnerung gespeichert. Das Ritual bekommt einen festen Platz." : "Erinnerung konnte nicht gespeichert werden.");
+    const result = await readApiJson(response);
+    setMessage(
+      response.ok
+        ? "Erinnerung gespeichert. Das Ritual bekommt einen festen Platz."
+        : result.error || "Erinnerung konnte nicht gespeichert werden.",
+    );
     await loadReminders();
   };
 
@@ -1121,17 +1144,25 @@ function ReminderScreen({ data }: { data: AppData }) {
   };
 
   const sendTestMail = async () => {
-    const response = await fetch("/api/reminders/test", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        childName: selectedChild?.name,
-        recipientName: selectedParent?.name,
-        email: form.email,
-      }),
-    });
-    const result = await response.json();
-    setSmtpMessage(response.ok ? "Testmail wurde versendet." : result.error || "Testmail konnte nicht versendet werden.");
+    if (!isValidEmail(form.email)) {
+      setSmtpMessage("Bitte zuerst eine gültige E-Mail-Adresse für den Test eintragen.");
+      return;
+    }
+    try {
+      const response = await fetch("/api/reminders/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          childName: selectedChild?.name,
+          recipientName: selectedParent?.name,
+          email: form.email,
+        }),
+      });
+      const result = await readApiJson(response);
+      setSmtpMessage(response.ok ? "Testmail wurde versendet." : result.error || "Testmail konnte nicht versendet werden.");
+    } catch {
+      setSmtpMessage("Testmail konnte nicht versendet werden. Bitte prüfen, ob der Server läuft.");
+    }
   };
 
   return (

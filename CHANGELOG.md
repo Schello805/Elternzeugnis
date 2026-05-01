@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.7
+
+- Testmail-Fehlerbehandlung verbessert
+- Reminder-API liefert bei SMTP- und Validierungsfehlern JSON statt 500-HTML
+- E-Mail-Validierung im Frontend ergänzt
+- Versionsnummer erhöht
+
 ## 0.1.6
 
 - Arbeitsbereich-Navigation in den Header verlegt
