@@ -2,21 +2,20 @@ import {
   BarChart3,
   BookOpen,
   CalendarClock,
-  Cookie,
   Download,
   Github,
   HeartHandshake,
-  Home,
-  Info,
   Mail,
   Plus,
   Save,
-  Shield,
   Sparkles,
   Trash2,
+  Upload,
   UserRound,
   UsersRound,
 } from "lucide-react";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import { useEffect, useMemo, useState } from "react";
 import type { Dispatch, ReactElement, ReactNode, SetStateAction } from "react";
 import {
@@ -35,9 +34,9 @@ import { appBranch, appBuildTime, appRevision, appVersion } from "./generated/ve
 const githubUrl = "https://github.com/Schello805/Elternzeugnis";
 const storageKey = "elternzeugnis:v2";
 
-type Route = "/" | "/impressum" | "/datenschutz" | "/cookies";
 type View = "certificate" | "people" | "history" | "reminders";
 type Frequency = "once" | "monthly" | "yearly";
+type Design = "classic" | "rainbow" | "forest" | "space";
 
 type Person = {
   id: string;
@@ -63,6 +62,7 @@ type Certificate = {
   wishes: string;
   favoriteMoment: string;
   signature: string;
+  design: Design;
   createdAt: string;
 };
 
@@ -84,6 +84,17 @@ type AppData = {
   parents: Person[];
   draft: Certificate;
   certificates: Certificate[];
+};
+
+type SmtpConfig = {
+  host: string;
+  port: string;
+  secure: boolean;
+  user: string;
+  pass: string;
+  from: string;
+  appUrl: string;
+  configured?: boolean;
 };
 
 const categories: Category[] = [
@@ -159,6 +170,7 @@ function newCertificate(childId = "child-1", parentId = "parent-1"): Certificate
     wishes: "",
     favoriteMoment: "",
     signature: "",
+    design: "classic",
     createdAt: new Date().toISOString(),
   };
 }
@@ -172,6 +184,16 @@ const initialData: AppData = {
   draft: newCertificate(),
   certificates: [],
 };
+
+function designLabel(design: Design) {
+  const labels: Record<Design, string> = {
+    classic: "Klassisch",
+    rainbow: "Bunt",
+    forest: "Natur",
+    space: "Sterne",
+  };
+  return labels[design];
+}
 
 function loadData(): AppData {
   try {
@@ -191,27 +213,9 @@ function loadData(): AppData {
   }
 }
 
-function getRoute(): Route {
-  const path = window.location.pathname;
-  if (path === "/impressum" || path === "/datenschutz" || path === "/cookies") return path;
-  return "/";
-}
-
-function navigate(route: Route) {
-  window.history.pushState({}, "", route);
-  window.dispatchEvent(new PopStateEvent("popstate"));
-}
-
 export function App() {
   const [data, setData] = useState<AppData>(loadData);
-  const [route, setRoute] = useState<Route>(getRoute);
   const [view, setView] = useState<View>("certificate");
-
-  useEffect(() => {
-    const handleRoute = () => setRoute(getRoute());
-    window.addEventListener("popstate", handleRoute);
-    return () => window.removeEventListener("popstate", handleRoute);
-  }, []);
 
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(data));
@@ -221,11 +225,7 @@ export function App() {
     <div className="app-shell">
       <Header />
       <main>
-        {route === "/" ? (
-          <AppWorkspace data={data} setData={setData} view={view} setView={setView} />
-        ) : (
-          <LegalPage route={route} />
-        )}
+        <AppWorkspace data={data} setData={setData} view={view} setView={setView} />
       </main>
       <Footer />
     </div>
@@ -235,7 +235,7 @@ export function App() {
 function Header() {
   return (
     <header className="topbar">
-      <button className="brand" onClick={() => navigate("/")} aria-label="Zur Zeugnis-App">
+      <div className="brand" aria-label="Elternzeugnis">
         <span className="brand-mark">
           <BookOpen size={23} />
         </span>
@@ -243,11 +243,8 @@ function Header() {
           <strong>Elternzeugnis</strong>
           <small>Zeugnisse, Erinnerungen und Jahresverlauf</small>
         </span>
-      </button>
+      </div>
       <nav className="topnav" aria-label="Hauptnavigation">
-        <button onClick={() => navigate("/")}>
-          <Home size={18} /> App
-        </button>
         <a href={githubUrl} target="_blank" rel="noreferrer">
           <Github size={18} /> GitHub
         </a>
@@ -278,7 +275,7 @@ function AppWorkspace({
 
       {view === "certificate" ? <CertificateScreen data={data} setData={setData} /> : null}
       {view === "people" ? <PeopleScreen data={data} setData={setData} /> : null}
-      {view === "history" ? <HistoryScreen data={data} /> : null}
+      {view === "history" ? <HistoryScreen data={data} setData={setData} setView={setView} /> : null}
       {view === "reminders" ? <ReminderScreen data={data} /> : null}
     </div>
   );
@@ -339,6 +336,23 @@ function CertificateScreen({
     });
   };
 
+  const exportPdf = async () => {
+    const sheet = document.querySelector<HTMLElement>(".certificate-sheet");
+    if (!sheet) return;
+    const canvas = await html2canvas(sheet, { scale: 2, backgroundColor: "#ffffff" });
+    const image = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height) * 0.96;
+    const width = canvas.width * ratio;
+    const height = canvas.height * ratio;
+    const x = (pageWidth - width) / 2;
+    const y = (pageHeight - height) / 2;
+    pdf.addImage(image, "PNG", x, y, width, height);
+    pdf.save(`Elternzeugnis-${child?.name || "Kind"}-${parent?.name || "Eltern"}.pdf`);
+  };
+
   return (
     <section className="certificate-layout">
       <aside className="side-panel no-print">
@@ -372,11 +386,25 @@ function CertificateScreen({
           Datum
           <input type="date" value={data.draft.date} onChange={(event) => updateDraft("date", event.target.value)} />
         </label>
+        <fieldset className="design-picker">
+          <legend>Design</legend>
+          {(["classic", "rainbow", "forest", "space"] as Design[]).map((design) => (
+            <button
+              key={design}
+              className={data.draft.design === design ? "selected" : ""}
+              onClick={() => updateDraft("design", design)}
+              type="button"
+            >
+              <span className={`swatch ${design}`} />
+              {designLabel(design)}
+            </button>
+          ))}
+        </fieldset>
         <div className="button-grid">
           <button className="primary-button" onClick={saveCertificate}>
             <Save size={19} /> Speichern
           </button>
-          <button className="secondary-button" onClick={() => window.print()}>
+          <button className="secondary-button" onClick={exportPdf}>
             <Download size={19} /> PDF
           </button>
         </div>
@@ -391,7 +419,7 @@ function CertificateScreen({
         ) : null}
       </aside>
 
-      <article className="certificate-sheet">
+      <article className={`certificate-sheet design-${data.draft.design}`}>
         <header className="certificate-head">
           <p>Schuljahr {data.draft.year || "____ / ____"}</p>
           <h2>Zeugnis fuer {parent?.name || "____________"}</h2>
@@ -500,6 +528,59 @@ function PeopleScreen({
         onRemove={(id) => removePerson("parents", id)}
         onChange={(id, patch) => updatePerson("parents", id, patch)}
       />
+      <DataTools data={data} setData={setData} />
+    </section>
+  );
+}
+
+function DataTools({
+  data,
+  setData,
+}: {
+  data: AppData;
+  setData: Dispatch<SetStateAction<AppData>>;
+}) {
+  const exportData = () => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `elternzeugnis-daten-${today()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importData = async (file: File | undefined) => {
+    if (!file) return;
+    const parsed = JSON.parse(await file.text()) as AppData;
+    setData({
+      ...initialData,
+      ...parsed,
+      children: parsed.children?.length ? parsed.children : initialData.children,
+      parents: parsed.parents?.length ? parsed.parents : initialData.parents,
+      draft: parsed.draft || newCertificate(),
+      certificates: parsed.certificates || [],
+    });
+  };
+
+  return (
+    <section className="panel">
+      <div className="panel-title">
+        <Upload size={24} />
+        <h1>Lokale Datensicherung</h1>
+      </div>
+      <p className="empty-state">
+        Exportiere Stammdaten, Entwurf und Verlauf als JSON-Datei oder lies eine Sicherung wieder ein.
+      </p>
+      <div className="button-grid">
+        <button className="primary-button" onClick={exportData}>
+          <Download size={19} /> Export
+        </button>
+        <label className="file-button">
+          <Upload size={19} /> Import
+          <input type="file" accept="application/json" onChange={(event) => importData(event.target.files?.[0])} />
+        </label>
+      </div>
     </section>
   );
 }
@@ -557,7 +638,15 @@ function PersonList({
   );
 }
 
-function HistoryScreen({ data }: { data: AppData }) {
+function HistoryScreen({
+  data,
+  setData,
+  setView,
+}: {
+  data: AppData;
+  setData: Dispatch<SetStateAction<AppData>>;
+  setView: (view: View) => void;
+}) {
   const analytics = useMemo(() => {
     return data.certificates
       .map((certificate) => {
@@ -575,6 +664,18 @@ function HistoryScreen({ data }: { data: AppData }) {
     const average = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
     return { name: category.title, average: Number(average.toFixed(2)) };
   });
+
+  const editCertificate = (certificate: Certificate) => {
+    setData((current) => ({ ...current, draft: { ...certificate, id: newId(), design: certificate.design || "classic" } }));
+    setView("certificate");
+  };
+
+  const deleteCertificate = (certificateId: string) => {
+    setData((current) => ({
+      ...current,
+      certificates: current.certificates.filter((certificate) => certificate.id !== certificateId),
+    }));
+  };
 
   return (
     <section className="history-layout">
@@ -620,6 +721,14 @@ function HistoryScreen({ data }: { data: AppData }) {
               </strong>
               <span>Durchschnitt {certificate.average}</span>
               <p>{certificate.favoriteMoment || certificate.strengths || "Kein Freitext eingetragen."}</p>
+              <div className="timeline-actions">
+                <button className="secondary-button" onClick={() => editCertificate(certificate)}>
+                  Bearbeiten
+                </button>
+                <button className="icon-button" onClick={() => deleteCertificate(certificate.id)} aria-label="Zeugnis loeschen">
+                  <Trash2 size={18} />
+                </button>
+              </div>
             </article>
           ))}
       </div>
@@ -642,6 +751,16 @@ function ReminderScreen({ data }: { data: AppData }) {
   const [smtpReady, setSmtpReady] = useState(false);
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [message, setMessage] = useState("");
+  const [smtpMessage, setSmtpMessage] = useState("");
+  const [smtpConfig, setSmtpConfig] = useState<SmtpConfig>({
+    host: "",
+    port: "587",
+    secure: false,
+    user: "",
+    pass: "",
+    from: "",
+    appUrl: "http://127.0.0.1:5173",
+  });
   const firstChild = data.children[0];
   const firstParent = data.parents[0];
   const [form, setForm] = useState({
@@ -663,8 +782,15 @@ function ReminderScreen({ data }: { data: AppData }) {
     setReminders(await remindersResponse.json());
   };
 
+  const loadSmtpConfig = async () => {
+    const response = await fetch("/api/smtp/config");
+    const config = await response.json();
+    setSmtpConfig({ ...config, pass: "" });
+    setSmtpReady(Boolean(config.configured));
+  };
+
   useEffect(() => {
-    loadReminders().catch(() => setMessage("Reminder-API ist noch nicht erreichbar."));
+    Promise.all([loadReminders(), loadSmtpConfig()]).catch(() => setMessage("Reminder-API ist noch nicht erreichbar."));
   }, []);
 
   const selectedChild = data.children.find((person) => person.id === form.childId) || firstChild;
@@ -692,18 +818,103 @@ function ReminderScreen({ data }: { data: AppData }) {
     await loadReminders();
   };
 
+  const saveSmtpConfig = async () => {
+    const response = await fetch("/api/smtp/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(smtpConfig),
+    });
+    const config = await response.json();
+    setSmtpConfig({ ...config, pass: "" });
+    setSmtpReady(Boolean(config.configured));
+    setSmtpMessage(response.ok ? "SMTP-Konfiguration gespeichert." : "SMTP-Konfiguration konnte nicht gespeichert werden.");
+  };
+
+  const sendTestMail = async () => {
+    const response = await fetch("/api/reminders/test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        childName: selectedChild?.name,
+        recipientName: selectedParent?.name,
+        email: form.email,
+      }),
+    });
+    const result = await response.json();
+    setSmtpMessage(response.ok ? "Testmail wurde versendet." : result.error || "Testmail konnte nicht versendet werden.");
+  };
+
   return (
     <section className="page-grid">
-      <section className="panel">
+      <section className="panel wide-panel">
         <div className="panel-title">
-          <CalendarClock size={25} />
-          <h1>Erinnerung planen</h1>
+          <Mail size={25} />
+          <h1>SMTP-Konfiguration</h1>
         </div>
         <div className={smtpReady ? "status ok" : "status warn"}>
           <Mail size={18} />
           {smtpReady
-            ? "SMTP ist konfiguriert. Erinnerungen koennen versendet werden."
-            : "SMTP fehlt noch. Bitte .env nach .env.example anlegen und Zugangsdaten eintragen."}
+            ? "SMTP ist gespeichert. Erinnerungen und Testmails koennen versendet werden."
+            : "SMTP ist noch nicht vollstaendig. Trage Host, Benutzer und Passwort ein."}
+        </div>
+        <div className="form-grid">
+          <label>
+            SMTP Host
+            <input value={smtpConfig.host} onChange={(event) => setSmtpConfig({ ...smtpConfig, host: event.target.value })} />
+          </label>
+          <label>
+            Port
+            <input value={smtpConfig.port} onChange={(event) => setSmtpConfig({ ...smtpConfig, port: event.target.value })} />
+          </label>
+          <label>
+            Benutzer
+            <input value={smtpConfig.user} onChange={(event) => setSmtpConfig({ ...smtpConfig, user: event.target.value })} />
+          </label>
+          <label>
+            Passwort
+            <input
+              type="password"
+              value={smtpConfig.pass}
+              placeholder="leer lassen, um gespeichertes Passwort zu behalten"
+              onChange={(event) => setSmtpConfig({ ...smtpConfig, pass: event.target.value })}
+            />
+          </label>
+          <label>
+            Absender
+            <input
+              value={smtpConfig.from}
+              placeholder="Elternzeugnis <noreply@example.com>"
+              onChange={(event) => setSmtpConfig({ ...smtpConfig, from: event.target.value })}
+            />
+          </label>
+          <label>
+            App-Link in der Mail
+            <input value={smtpConfig.appUrl} onChange={(event) => setSmtpConfig({ ...smtpConfig, appUrl: event.target.value })} />
+          </label>
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={smtpConfig.secure}
+              onChange={(event) => setSmtpConfig({ ...smtpConfig, secure: event.target.checked })}
+            />
+            SSL/TLS direkt verwenden
+          </label>
+        </div>
+        <div className="button-grid compact">
+          <button className="primary-button" onClick={saveSmtpConfig}>
+            <Save size={19} /> SMTP speichern
+          </button>
+          <button className="secondary-button" onClick={sendTestMail}>
+            <Mail size={19} /> Test senden
+          </button>
+        </div>
+        {smtpMessage ? <p className="form-message">{smtpMessage}</p> : null}
+      </section>
+
+      <section className="panel">
+        <div className="panel-title">
+          <CalendarClock size={25} />
+          <h1>Erinnerung planen</h1>
         </div>
         <div className="form-grid">
           <label>
@@ -794,52 +1005,6 @@ function ReminderScreen({ data }: { data: AppData }) {
   );
 }
 
-function LegalPage({ route }: { route: Route }) {
-  const content = {
-    "/impressum": {
-      icon: <Info size={28} />,
-      title: "Impressum",
-      body: [
-        "Dieses Projekt wird von Michael Schellenberger als Open-Source-Projekt bereitgestellt.",
-        "Die vollstaendigen Anbieterkennzeichnungen werden vor einer oeffentlichen produktiven Nutzung ergaenzt.",
-        "Kontakt und Projektinformationen werden ueber das GitHub-Repository gepflegt.",
-      ],
-    },
-    "/datenschutz": {
-      icon: <Shield size={28} />,
-      title: "Datenschutz",
-      body: [
-        "Zeugnisse und Stammdaten werden lokal im Browser gespeichert.",
-        "Erinnerungen werden lokal im Server-Datenordner gespeichert, wenn die App mit Backend gestartet wird.",
-        "SMTP-Zugangsdaten gehoeren in die lokale .env Datei und werden nicht an den Browser ausgeliefert.",
-      ],
-    },
-    "/cookies": {
-      icon: <Cookie size={28} />,
-      title: "Cookiehinweise",
-      body: [
-        "Diese App verwendet keine Cookies.",
-        "Entwuerfe, Stammdaten und Verlauf werden im lokalen Browserspeicher gesichert.",
-        "Serverseitige Erinnerungen werden in data/reminders.json gespeichert.",
-      ],
-    },
-    "/": { icon: <Info size={28} />, title: "", body: [] },
-  }[route];
-
-  return (
-    <section className="legal-page">
-      <div className="legal-icon">{content.icon}</div>
-      <h1>{content.title}</h1>
-      {content.body.map((paragraph) => (
-        <p key={paragraph}>{paragraph}</p>
-      ))}
-      <button className="primary-button" onClick={() => navigate("/")}>
-        Zurueck zur App
-      </button>
-    </section>
-  );
-}
-
 function Footer() {
   return (
     <footer className="site-footer">
@@ -849,11 +1014,7 @@ function Footer() {
           <Github size={18} /> GitHub
         </a>
       </div>
-      <nav aria-label="Rechtsdokumente">
-        <button onClick={() => navigate("/impressum")}>Impressum</button>
-        <button onClick={() => navigate("/datenschutz")}>Datenschutz</button>
-        <button onClick={() => navigate("/cookies")}>Cookiehinweise</button>
-      </nav>
+      <small>Lokale App ohne Cloud-Speicherung und ohne Rechtsdokumente.</small>
       <span title={`Branch ${appBranch}, Build ${appBuildTime}`}>Rev. {appVersion}-{appRevision}</span>
     </footer>
   );

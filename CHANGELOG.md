@@ -9,7 +9,11 @@
 - Verlauf ueber gespeicherte Zeugnisse
 - Grafische Auswertungen mit Recharts
 - SMTP-basiertes Erinnerungssystem mit lokaler API
+- SMTP-Konfiguration und Testmail im Frontend
+- PDF-Export per jsPDF/html2canvas
+- mehrere Zeugnisdesigns
+- Import und Export der lokalen App-Daten
 - Druckbare Zeugnisvorschau
 - Paedagogische Hinweise bei Note 5 oder 6
-- Footer mit Rechtsdokumenten, GitHub-Link und Revisionsnummer
+- Footer mit GitHub-Link und Revisionsnummer
 - README, Lizenz und Projekt-Dokumente ergaenzt

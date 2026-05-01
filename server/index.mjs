@@ -1,7 +1,7 @@
-import "dotenv/config";
 import cron from "node-cron";
 import express from "express";
 import nodemailer from "nodemailer";
+import dotenv from "dotenv";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,13 +9,48 @@ import crypto from "node:crypto";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dataFile = resolve(root, "data/reminders.json");
+const envFile = resolve(root, ".env");
 const app = express();
+
+dotenv.config({ path: envFile });
 const port = Number(process.env.PORT || 4174);
 
 app.use(express.json({ limit: "1mb" }));
 
 function smtpConfigured() {
   return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+}
+
+function smtpConfig() {
+  return {
+    host: process.env.SMTP_HOST || "",
+    port: process.env.SMTP_PORT || "587",
+    secure: process.env.SMTP_SECURE === "true",
+    user: process.env.SMTP_USER || "",
+    from: process.env.SMTP_FROM || "",
+    appUrl: process.env.APP_URL || "http://127.0.0.1:5173",
+    configured: smtpConfigured(),
+  };
+}
+
+async function writeEnvConfig(config) {
+  const values = {
+    PORT: String(process.env.PORT || 4174),
+    APP_URL: String(config.appUrl || "http://127.0.0.1:5173"),
+    SMTP_HOST: String(config.host || ""),
+    SMTP_PORT: String(config.port || "587"),
+    SMTP_SECURE: config.secure ? "true" : "false",
+    SMTP_USER: String(config.user || ""),
+    SMTP_PASS: String(config.pass || process.env.SMTP_PASS || ""),
+    SMTP_FROM: String(config.from || ""),
+  };
+
+  const body = Object.entries(values)
+    .map(([key, value]) => `${key}=${JSON.stringify(value)}`)
+    .join("\n");
+
+  await writeFile(envFile, `${body}\n`);
+  Object.assign(process.env, values);
 }
 
 function createTransport() {
@@ -114,6 +149,15 @@ app.get("/api/reminders/status", (_request, response) => {
     smtpConfigured: smtpConfigured(),
     appUrl: process.env.APP_URL || "http://127.0.0.1:5173",
   });
+});
+
+app.get("/api/smtp/config", (_request, response) => {
+  response.json(smtpConfig());
+});
+
+app.put("/api/smtp/config", async (request, response) => {
+  await writeEnvConfig(request.body || {});
+  response.json(smtpConfig());
 });
 
 app.get("/api/reminders", async (_request, response) => {

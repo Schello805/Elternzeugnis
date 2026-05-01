@@ -18,8 +18,11 @@ Kinder sollen nicht einfach „bewerten“, sondern ausdruecken koennen, was ihn
 - Zeugnisvorschau im druckbaren Format
 - Drucken oder als PDF speichern ueber den Browser
 - Erinnerungssystem mit SMTP-Konfiguration ueber `.env`
+- SMTP-Konfiguration und Testmail direkt im lokalen Frontend
+- PDF-Export ohne Cloud-Dienst
+- mehrere Zeugnisdesigns
+- Export und Import der lokalen App-Daten
 - Lokale Speicherung im Browser, keine Serveruebertragung
-- Rechtsseiten fuer Impressum, Datenschutz und Cookiehinweise
 - Footer mit GitHub-Link und automatischer Versions-/Revisionsanzeige
 
 ## Lokale Entwicklung
@@ -78,11 +81,11 @@ Beim Starten und Bauen wird automatisch `src/generated/version.ts` aktualisiert.
 - Bei Note 5 oder 6 erscheinen konkrete, kleine und familiennahe Handlungsideen.
 - Erst Staerken wahrnehmen, dann einen naechsten Schritt vereinbaren.
 
-## Datenschutz
+## Lokale Daten
 
-Die App speichert Eingaben nur lokal im Browser des jeweiligen Geraets. Es werden keine Tracking-Dienste verwendet und keine Zeugnisdaten an einen Server gesendet.
+Die App ist fuer lokale Nutzung gedacht. Sie speichert Eingaben nur lokal im Browser des jeweiligen Geraets. Es werden keine Tracking-Dienste verwendet und keine Zeugnisdaten an externe Server gesendet.
 
-Fuer E-Mail-Erinnerungen speichert der lokale API-Server Erinnerungsdaten in `data/reminders.json`. SMTP-Zugangsdaten liegen ausschliesslich in der lokalen `.env` Datei.
+Fuer E-Mail-Erinnerungen speichert der lokale API-Server Erinnerungsdaten in `data/reminders.json`. SMTP-Zugangsdaten liegen ausschliesslich in der lokalen `.env` Datei. Die SMTP-Konfiguration kann ueber die lokale Oberflaeche gepflegt werden.
 
 ## Repository
 
