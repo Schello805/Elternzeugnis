@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.11
+
+- Browser-Fallback für Geräte ohne `crypto.randomUUID()` ergänzt
+- ID-Erzeugung funktioniert nun auch auf älteren Tablet- und Safari-Versionen
+- Versionsnummer erhöht
+
 ## 0.1.10
 
 - Update-Skript schreibt die systemd-Service-Datei passend zum aktuellen `APP_DIR` neu
