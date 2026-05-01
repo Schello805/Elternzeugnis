@@ -1,10 +1,10 @@
 # Elternzeugnis
 
-Eine tabletfreundliche Web-App, mit der Kinder ein liebevolles, humorvolles und pädagogisch sinnvolles Zeugnis für Eltern oder andere Bezugspersonen erstellen können.
+Eine tabletfreundliche Web-App, mit der Kinder ein liebevolles, humorvolles und pädagogisch sinnvolles Zeugnis für Eltern oder andere Bezugspersonen erstellen können. Im Mittelpunkt stehen Beziehung, Selbstwirksamkeit, Zuhören und konkrete Wünsche statt bloßer Bewertung.
 
 ## Idee
 
-Kinder sollen nicht einfach „bewerten“, sondern ausdrücken können, was ihnen gut tut und was sie sich wünschen. Die App verbindet spielerische Schulnoten mit positiven Formulierungen, Freitextfeldern und pädagogischen Hinweisen bei schwierigen Bewertungen.
+Kinder sollen nicht einfach „bewerten“, sondern lernen, ihre Wahrnehmung freundlich und klar auszudrücken: Was tut mir gut? Wo brauche ich mehr Unterstützung? Welcher gemeinsame Moment war wichtig? Die App verbindet spielerische Schulnoten mit positiven Formulierungen, Freitextfeldern und pädagogischen Hinweisen bei schwierigen Bewertungen.
 
 ## Funktionen
 
@@ -12,6 +12,7 @@ Kinder sollen nicht einfach „bewerten“, sondern ausdrücken können, was ihn
 - direkte Eingabe der Noten im Zeugnisdesign
 - Start-Dashboard für die wichtigsten Wege
 - Kindermodus mit großer Touch-Bedienung
+- beziehungsorientierte Fragen statt reiner Leistungsbewertung
 - Stammdaten für Kinder, Eltern und Bezugspersonen
 - Verlauf über gespeicherte Zeugnisse pro Jahr
 - grafische Auswertungen mit Durchschnitt und Kategorien
@@ -129,6 +130,8 @@ Beim Starten und Bauen wird automatisch `src/generated/version.ts` aktualisiert.
 - Die App formuliert Verbesserung als Wunsch, nicht als Vorwurf.
 - Bei Note 5 oder 6 erscheinen konkrete, kleine und familiennahe Handlungsideen.
 - Erst Stärken wahrnehmen, dann einen nächsten Schritt vereinbaren.
+- Eltern werden nicht beschämt, sondern zum Zuhören und Nachfragen eingeladen.
+- Wiederholte Zeugnisse machen sichtbar, welche Bedürfnisse konstant bleiben und wo Beziehung wächst.
 
 ## Daten
 

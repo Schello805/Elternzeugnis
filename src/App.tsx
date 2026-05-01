@@ -105,50 +105,50 @@ const categories: Category[] = [
   {
     id: "geduld",
     title: "Geduld",
-    childHint: "Bleibt ruhig, wenn etwas nicht sofort klappt?",
-    advice: "Ein Familien-Codewort für kurze Pausen kann helfen.",
+    childHint: "Bleibt die Person ruhig und freundlich, wenn etwas Zeit braucht?",
+    advice: "Vereinbart ein Pausenwort. Es schützt vor Streit und hilft allen, wieder gut zuzuhören.",
   },
   {
     id: "zuhoren",
     title: "Zuhören",
-    childHint: "Hört zu, ohne sofort zu schimpfen oder abzulenken?",
-    advice: "Zehn Minuten Redezeit ohne Handy sind ein guter Anfang.",
+    childHint: "Hört sie wirklich zu, fragt nach und nimmt deine Gefühle ernst?",
+    advice: "Zehn Minuten ungeteilte Zuhörzeit stärken Vertrauen mehr als schnelle Lösungen.",
   },
   {
     id: "spielzeit",
     title: "Spielzeit",
-    childHint: "Nimmt sich Zeit für Spiel, Vorlesen oder Quatsch?",
-    advice: "Lieber kurz und wirklich gemeinsam als lang und halb dabei.",
+    childHint: "Gibt es gemeinsame Zeit zum Spielen, Lesen, Lachen oder Quatsch machen?",
+    advice: "Kurze, verlässliche gemeinsame Zeit wirkt oft stärker als große Versprechen.",
   },
   {
     id: "trosten",
     title: "Trösten",
-    childHint: "Ist da, wenn du traurig, wütend oder unsicher bist?",
-    advice: "Erst fragen: Brauchst du Trost, Hilfe oder Ruhe?",
+    childHint: "Fühlst du dich gesehen, wenn du traurig, wütend oder unsicher bist?",
+    advice: "Die Frage „Brauchst du Trost, Hilfe oder Ruhe?“ gibt Kindern Sicherheit und Wahlmöglichkeiten.",
   },
   {
     id: "lernen",
     title: "Lernhilfe",
-    childHint: "Erklärt ohne Druck und macht Mut?",
-    advice: "Fehler zeigen nur, was als Nächstes geübt wird.",
+    childHint: "Wird Lernen erklärt, ohne Druck zu machen und mit Mut für den nächsten Schritt?",
+    advice: "Fehler sind Lernspuren. Erst ermutigen, dann gemeinsam einen kleinen Übungsschritt wählen.",
   },
   {
     id: "fairness",
     title: "Fairness",
-    childHint: "Sind Regeln verständlich und möglichst gerecht?",
-    advice: "Regeln gemeinsam besprechen und sichtbar aufschreiben.",
+    childHint: "Sind Regeln verständlich, gerecht und vorher besprochen?",
+    advice: "Gemeinsam besprochene Regeln fühlen sich weniger wie Macht und mehr wie Orientierung an.",
   },
   {
     id: "abenteuer",
     title: "Abenteuer",
-    childHint: "Gibt es Ausflüge, Bewegung und gemeinsame Erlebnisse?",
-    advice: "Ein Ideen-Glas macht kleine gemeinsame Pläne leichter.",
+    childHint: "Gibt es kleine Abenteuer, Bewegung und Erinnerungen, die euch verbinden?",
+    advice: "Ein Ideen-Glas macht Wünsche sichtbar und hilft, gemeinsame Zeit konkret zu planen.",
   },
   {
     id: "versoehnen",
     title: "Versöhnen",
-    childHint: "Kann sich entschuldigen und wieder freundlich werden?",
-    advice: "Nach Streit hilft: Ich mag dich, wir versuchen es nochmal.",
+    childHint: "Kann die Person nach Streit wieder auf dich zugehen und sich entschuldigen?",
+    advice: "Ein guter Neustart-Satz lautet: „Ich mag dich. Lass es uns nochmal versuchen.“",
   },
 ];
 
@@ -318,10 +318,10 @@ function Dashboard({ data, setView }: { data: AppData; setView: (view: View) => 
     <section className="dashboard">
       <div className="dashboard-hero">
         <p className="eyebrow">Familien-App</p>
-        <h1>Ein kleines Ritual für mehr Verbindung</h1>
+        <h1>Ein liebevolles Ritual für Beziehung, Mut und echte Gespräche</h1>
         <p>
-          Kinder füllen ein Elternzeugnis aus, Eltern sehen Entwicklung über die Jahre und
-          Erinnerungen helfen, das Ritual nicht zu vergessen.
+          Kinder lernen, ihre Bedürfnisse wertschätzend auszudrücken. Eltern bekommen kein Urteil,
+          sondern eine Einladung zum Zuhören, Nachfragen und gemeinsamen Wachsen.
         </p>
         <div className="hero-actions">
           <button className="primary-button" onClick={() => setView("child")}>
@@ -337,22 +337,22 @@ function Dashboard({ data, setView }: { data: AppData; setView: (view: View) => 
         <button className="dashboard-card" onClick={() => setView("child")}>
           <Pencil size={25} />
           <strong>Neues Zeugnis</strong>
-          <span>Große Buttons, wenig Ablenkung.</span>
+          <span>Kindgerecht ausfüllen, ohne Druck und ohne Ablenkung.</span>
         </button>
         <button className="dashboard-card" onClick={() => setView(draftHasText ? "certificate" : "people")}>
           <FileText size={25} />
           <strong>{draftHasText ? "Entwurf fortsetzen" : "Stammdaten anlegen"}</strong>
-          <span>{draftHasText ? "Der aktuelle Entwurf wartet." : "Kinder und Eltern vorbereiten."}</span>
+          <span>{draftHasText ? "Gedanken in Ruhe fertig formulieren." : "Namen vorbereiten, damit Kinder leicht starten."}</span>
         </button>
         <button className="dashboard-card" onClick={() => setView("history")}>
           <BarChart3 size={25} />
           <strong>{data.certificates.length} gespeicherte Zeugnisse</strong>
-          <span>{lastCertificate ? `Zuletzt: ${lastCertificate.year}` : "Noch keine Auswertung."}</span>
+          <span>{lastCertificate ? `Zuletzt: ${lastCertificate.year}` : "Entwicklung über die Jahre sichtbar machen."}</span>
         </button>
         <button className="dashboard-card" onClick={() => setView("reminders")}>
           <CalendarClock size={25} />
           <strong>Erinnerungen</strong>
-          <span>SMTP einrichten und Termine planen.</span>
+          <span>Das Ritual regelmäßig und verlässlich in den Familienalltag holen.</span>
         </button>
       </div>
     </section>
@@ -391,7 +391,7 @@ function ChildModeScreen({
       <div className="child-card">
         <p className="eyebrow">Kindermodus</p>
         <h1>
-          {child?.name || "Kind"} bewertet {parent?.name || "Elternteil"}
+          {child?.name || "Kind"} erzählt, was bei {parent?.name || "Elternteil"} gut tut
         </h1>
         <div className="progress-track">
           <span style={{ width: `${((focusIndex + 1) / categories.length) * 100}%` }} />
@@ -433,7 +433,7 @@ function ChildModeScreen({
 }
 
 function gradeCopy(grade: number) {
-  return ["", "Super", "Gut", "Okay", "Üben", "Mehr Hilfe", "Reden"][grade];
+  return ["", "Tut mir gut", "Meist gut", "Okay", "Bitte üben", "Ich brauche Hilfe", "Bitte reden"][grade];
 }
 
 function WishChips({
@@ -444,9 +444,9 @@ function WishChips({
   setData: Dispatch<SetStateAction<AppData>>;
 }) {
   const wishes = [
-    `Ich wünsche mir bei ${category.title.toLowerCase()} mehr Zeit.`,
-    `Bitte frag mich, was ich brauche.`,
-    `Lass uns dafür eine kleine Abmachung machen.`,
+    `Ich wünsche mir bei ${category.title.toLowerCase()} mehr gemeinsame Zeit.`,
+    "Bitte frag mich zuerst, was ich gerade brauche.",
+    "Lass uns eine kleine Abmachung machen, die wir beide schaffen.",
   ];
 
   const addWish = (wish: string) => {
@@ -461,7 +461,7 @@ function WishChips({
 
   return (
     <div className="wish-chips">
-      <strong>Das kannst du freundlich sagen:</strong>
+      <strong>So kannst du deinen Wunsch freundlich sagen:</strong>
       {wishes.map((wish) => (
         <button key={wish} onClick={() => addWish(wish)}>
           {wish}
@@ -524,14 +524,14 @@ function CertificateScreen({
     const y = (pageHeight - height) / 2;
     pdf.addImage(image, "PNG", x, y, width, height);
     pdf.save(`Elternzeugnis-${child?.name || "Kind"}-${parent?.name || "Eltern"}.pdf`);
-    setFeedback("PDF wurde erstellt.");
+    setFeedback("PDF wurde erstellt. Das Zeugnis kann jetzt gemeinsam angeschaut werden.");
   };
 
   return (
     <section className="certificate-layout">
       <aside className="side-panel no-print">
         <p className="eyebrow">Eingabe</p>
-        <h1>Direkt ins Zeugnis schreiben</h1>
+        <h1>Wünsche, Stärken und Momente festhalten</h1>
         <label>
           Kind
           <select value={data.draft.childId} onChange={(event) => updateDraft("childId", event.target.value)}>
@@ -589,8 +589,8 @@ function CertificateScreen({
           <div className="pedagogy-box">
             <HeartHandshake size={22} />
             <p>
-              Note 5 oder 6 ist hier kein Urteil. Sie zeigt einen Wunsch nach mehr Verbindung,
-              Ruhe oder gemeinsamer Zeit.
+              Note 5 oder 6 ist kein Urteil. Sie macht sichtbar, wo ein Kind mehr Sicherheit,
+              Aufmerksamkeit oder gemeinsame Zeit braucht.
             </p>
           </div>
         ) : null}
@@ -640,15 +640,15 @@ function CertificateScreen({
 
         <div className="certificate-fields">
           <label>
-            Das klappt richtig gut
+            Das gibt mir Sicherheit und Freude
             <textarea value={data.draft.strengths} onChange={(event) => updateDraft("strengths", event.target.value)} />
           </label>
           <label>
-            Das wünsche ich mir noch
+            Das wünsche ich mir für unser Miteinander
             <textarea value={data.draft.wishes} onChange={(event) => updateDraft("wishes", event.target.value)} />
           </label>
           <label>
-            Mein schönster Moment
+            Ein Moment, den ich behalten möchte
             <textarea
               value={data.draft.favoriteMoment}
               onChange={(event) => updateDraft("favoriteMoment", event.target.value)}
@@ -703,8 +703,8 @@ function PeopleScreen({
           <p className="eyebrow">Vorbereitung</p>
           <h1>Stammdaten für das Familienritual</h1>
           <p>
-            Lege hier Kinder, Eltern und E-Mail-Adressen an. Danach ist der Kindermodus einfacher,
-            weil Kinder nur noch auswählen und bewerten müssen.
+            Bereite die Namen vor, damit Kinder später ohne technische Hürden erzählen können,
+            was sie stärkt, was sie brauchen und worüber sie gerne sprechen möchten.
           </p>
         </div>
       </section>
@@ -768,7 +768,7 @@ function DataTools({
         <h1>Datensicherung</h1>
       </div>
       <p className="empty-state">
-        Exportiere Stammdaten, Entwurf und Verlauf als JSON-Datei oder lies eine Sicherung wieder ein.
+        Sichere Zeugnisse als Familienerinnerung oder übertrage sie auf ein anderes Gerät.
       </p>
       <div className="button-grid">
         <button className="primary-button" onClick={exportData}>
@@ -907,7 +907,10 @@ function HistoryScreen({
           <div className="guided-empty">
             <FileText size={34} />
             <strong>Noch kein Zeugnis gespeichert</strong>
-            <p>Starte im Kindermodus oder bearbeite ein Zeugnis. Nach dem Speichern entstehen hier Verlauf und Grafiken.</p>
+            <p>
+              Starte im Kindermodus oder bearbeite ein Zeugnis. Nach dem Speichern wird sichtbar,
+              welche Themen sich verbessern und welche Bedürfnisse wiederkehren.
+            </p>
             <button className="primary-button" onClick={() => setView("child")}>
               <Pencil size={19} /> Kindermodus starten
             </button>
@@ -925,7 +928,7 @@ function HistoryScreen({
                 {certificate.year}: {certificate.child} für {certificate.parent}
               </strong>
               <span>Durchschnitt {certificate.average}</span>
-              <p>{certificate.favoriteMoment || certificate.strengths || "Kein Freitext eingetragen."}</p>
+              <p>{certificate.favoriteMoment || certificate.strengths || "Noch kein gemeinsamer Moment notiert."}</p>
               <div className="timeline-actions">
                 <button className="secondary-button" onClick={() => editCertificate(certificate)}>
                   Bearbeiten
@@ -1014,7 +1017,7 @@ function ReminderScreen({ data }: { data: AppData }) {
         frequency: form.frequency,
       }),
     });
-    setMessage(response.ok ? "Erinnerung gespeichert." : "Erinnerung konnte nicht gespeichert werden.");
+    setMessage(response.ok ? "Erinnerung gespeichert. Das Ritual bekommt einen festen Platz." : "Erinnerung konnte nicht gespeichert werden.");
     await loadReminders();
   };
 
@@ -1059,8 +1062,8 @@ function ReminderScreen({ data }: { data: AppData }) {
         <div className={smtpReady ? "status ok" : "status warn"}>
           <Mail size={18} />
           {smtpReady
-            ? "SMTP ist gespeichert. Erinnerungen und Testmails können versendet werden."
-            : "SMTP ist noch nicht vollständig. Trage Host, Benutzer und Passwort ein."}
+            ? "E-Mail-Erinnerungen sind bereit, damit das Gespräch nicht im Alltag untergeht."
+            : "Trage SMTP-Daten ein, damit Erinnerungen zuverlässig verschickt werden können."}
         </div>
         <div className="form-grid">
           <label>
@@ -1121,6 +1124,10 @@ function ReminderScreen({ data }: { data: AppData }) {
           <CalendarClock size={25} />
           <h1>Erinnerung planen</h1>
         </div>
+        <p className="empty-state">
+          Ein wiederkehrender Termin macht aus dem Zeugnis kein Einzelereignis, sondern ein ruhiges
+          Gespräch über Beziehung, Wünsche und Entwicklung.
+        </p>
         <div className="form-grid">
           <label>
             Kind
@@ -1205,7 +1212,7 @@ function ReminderScreen({ data }: { data: AppData }) {
             <div className="guided-empty">
               <CalendarClock size={34} />
               <strong>Noch keine Erinnerung geplant</strong>
-              <p>Speichere links einen Termin, damit das Elternzeugnis jedes Jahr wieder ins Familienleben passt.</p>
+              <p>Plane einen Termin, damit Zuhören, Lob und Wünsche regelmäßig Raum bekommen.</p>
             </div>
           )}
         </div>

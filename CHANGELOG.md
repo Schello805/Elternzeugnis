@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4
+
+- App-Texte pädagogisch geschärft
+- Kategorien stärker auf Bedürfnisse, Beziehung und Selbstwirksamkeit ausgerichtet
+- Reminder-E-Mail beziehungsorientierter formuliert
+- README um pädagogischen Wert erweitert
+- Versionsnummer erhöht
+
 ## 0.1.3
 
 - Logo als App-Logo eingebunden

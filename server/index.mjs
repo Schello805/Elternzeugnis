@@ -117,10 +117,11 @@ function reminderMail(reminder) {
   const child = reminder.childName || "ein Kind";
   const recipient = reminder.recipientName || "die Eltern";
   return {
-    subject: `Erinnerung: ${child} kann ein Elternzeugnis ausfüllen`,
+    subject: `Erinnerung: Zeit für das Elternzeugnis von ${child}`,
     text:
       `Hallo,\n\nheute ist ein guter Zeitpunkt, damit ${child} ein Elternzeugnis für ${recipient} ausfüllt.\n\n` +
-      "Pädagogischer Gedanke: Erst Stärken sehen, dann Wünsche freundlich formulieren. Eine schlechte Note ist ein Gesprächsanlass, kein Urteil.\n\n" +
+      "Pädagogischer Gedanke: Erst Stärken sehen, dann zuhören, dann Wünsche freundlich formulieren. Eine schlechte Note ist kein Urteil, sondern ein Hinweis auf ein Bedürfnis.\n\n" +
+      "Nehmt euch danach ein paar ruhige Minuten: Was war schön? Was braucht mehr Aufmerksamkeit? Was ist ein kleiner nächster Schritt?\n\n" +
       `App öffnen: ${process.env.APP_URL || "http://127.0.0.1:5173"}\n\n` +
       "Viele Grüße\nElternzeugnis",
   };
