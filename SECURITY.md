@@ -11,3 +11,5 @@ Bitte melde Sicherheitsprobleme nicht oeffentlich als Issue, wenn dadurch Nutzer
 ## Datenschutzprinzip
 
 Die App ist so angelegt, dass Zeugnisdaten lokal im Browser bleiben. Neue Funktionen sollen dieses Prinzip respektieren und keine personenbezogenen Daten unnoetig uebertragen.
+
+E-Mail-Erinnerungen benoetigen einen lokalen API-Server. SMTP-Zugangsdaten duerfen nur in `.env` gespeichert werden und gehoeren nicht ins Repository.

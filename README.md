@@ -9,10 +9,15 @@ Kinder sollen nicht einfach „bewerten“, sondern ausdruecken koennen, was ihn
 ## Funktionen
 
 - Zeugnis-Editor fuer Tablet, Desktop und Smartphone
+- direkte Eingabe der Noten im Zeugnisdesign
+- Stammdaten fuer Kinder, Eltern und Bezugspersonen
+- Verlauf ueber gespeicherte Zeugnisse pro Jahr
+- grafische Auswertungen mit Durchschnitt und Kategorien
 - Bewertungsbereiche wie Geduld, Zuhoeren, Spielzeit, Fairness und Lernhilfe
 - Paedagogische Hinweise bei Note 5 oder 6
 - Zeugnisvorschau im druckbaren Format
 - Drucken oder als PDF speichern ueber den Browser
+- Erinnerungssystem mit SMTP-Konfiguration ueber `.env`
 - Lokale Speicherung im Browser, keine Serveruebertragung
 - Rechtsseiten fuer Impressum, Datenschutz und Cookiehinweise
 - Footer mit GitHub-Link und automatischer Versions-/Revisionsanzeige
@@ -24,11 +29,38 @@ npm install
 npm run dev
 ```
 
-Die App laeuft danach lokal unter der im Terminal angezeigten Adresse, standardmaessig:
+Die App startet damit Frontend und Reminder-API. Das Frontend laeuft standardmaessig unter:
 
 ```text
 http://127.0.0.1:5173/
 ```
+
+Die Reminder-API laeuft lokal unter:
+
+```text
+http://127.0.0.1:4174/
+```
+
+## Erinnerungen per E-Mail
+
+Erstelle lokal eine `.env` Datei nach dem Muster aus `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Danach SMTP-Daten eintragen:
+
+```text
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=dein-benutzer
+SMTP_PASS=dein-passwort
+SMTP_FROM="Elternzeugnis <noreply@example.com>"
+```
+
+Erinnerungen werden lokal in `data/reminders.json` gespeichert. Dieser Ordner wird nicht versioniert.
 
 ## Build
 
@@ -49,6 +81,8 @@ Beim Starten und Bauen wird automatisch `src/generated/version.ts` aktualisiert.
 ## Datenschutz
 
 Die App speichert Eingaben nur lokal im Browser des jeweiligen Geraets. Es werden keine Tracking-Dienste verwendet und keine Zeugnisdaten an einen Server gesendet.
+
+Fuer E-Mail-Erinnerungen speichert der lokale API-Server Erinnerungsdaten in `data/reminders.json`. SMTP-Zugangsdaten liegen ausschliesslich in der lokalen `.env` Datei.
 
 ## Repository
 
