@@ -49,16 +49,24 @@ a:focus-visible {
 }
 
 .topbar {
-  align-items: center;
+  align-items: stretch;
   background: rgba(255, 252, 245, 0.96);
   border-bottom: 1px solid #e3d8c4;
   display: flex;
-  gap: 18px;
-  justify-content: space-between;
-  padding: 14px clamp(16px, 4vw, 42px);
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px clamp(16px, 4vw, 42px);
   position: sticky;
   top: 0;
   z-index: 10;
+}
+
+.topbar-brand-row {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  min-width: 0;
 }
 
 .brand {
@@ -144,9 +152,16 @@ main {
   background: #fffdf7;
   border: 1px solid #ded3bf;
   border-radius: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
+  flex-wrap: nowrap;
   padding: 6px;
+}
+
+.header-tabs {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
 
 .module-tabs button {
@@ -160,6 +175,7 @@ main {
   gap: 8px;
   min-height: 44px;
   padding: 0 14px;
+  white-space: nowrap;
 }
 
 .module-tabs .active {
@@ -974,15 +990,16 @@ textarea {
 }
 
 @media (max-width: 720px) {
-  .topbar,
   .person-row,
   .grade-line {
     align-items: stretch;
     grid-template-columns: 1fr;
   }
 
-  .topbar {
+  .topbar-brand-row {
+    align-items: stretch;
     flex-direction: column;
+    gap: 10px;
   }
 
   .topnav,
@@ -991,17 +1008,8 @@ textarea {
   }
 
   .module-tabs button {
-    flex: 1 1 150px;
-  }
-
-  .module-tabs {
-    bottom: 0;
-    box-shadow: 0 -10px 28px rgba(67, 52, 31, 0.1);
-    left: 0;
-    margin: 0;
-    padding: 8px;
-    position: sticky;
-    z-index: 8;
+    flex: 0 0 auto;
+    min-height: 48px;
   }
 
   .dashboard-hero {

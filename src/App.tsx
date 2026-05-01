@@ -227,7 +227,7 @@ export function App() {
 
   return (
     <div className="app-shell">
-      <Header />
+      <Header view={view} setView={setView} />
       <main>
         <AppWorkspace data={data} setData={setData} view={view} setView={setView} />
       </main>
@@ -236,22 +236,32 @@ export function App() {
   );
 }
 
-function Header() {
+function Header({ view, setView }: { view: View; setView: (view: View) => void }) {
   return (
     <header className="topbar">
-      <div className="brand" aria-label="Elternzeugnis">
-        <span className="brand-mark">
-          <img src="/logo-elternzeugnis.png" alt="" />
-        </span>
-        <span>
-          <strong>Elternzeugnis</strong>
-          <small>Zeugnisse, Erinnerungen und Jahresverlauf</small>
-        </span>
+      <div className="topbar-brand-row">
+        <div className="brand" aria-label="Elternzeugnis">
+          <span className="brand-mark">
+            <img src="/logo-elternzeugnis.png" alt="" />
+          </span>
+          <span>
+            <strong>Elternzeugnis</strong>
+            <small>Zeugnisse, Erinnerungen und Jahresverlauf</small>
+          </span>
+        </div>
+        <nav className="topnav" aria-label="Projekt">
+          <a href={githubUrl} target="_blank" rel="noreferrer">
+            <Github size={18} /> GitHub
+          </a>
+        </nav>
       </div>
-      <nav className="topnav" aria-label="Hauptnavigation">
-        <a href={githubUrl} target="_blank" rel="noreferrer">
-          <Github size={18} /> GitHub
-        </a>
+      <nav className="module-tabs header-tabs" aria-label="Arbeitsbereiche">
+        <Tab active={view === "home"} onClick={() => setView("home")} icon={<Star size={19} />} label="Start" />
+        <Tab active={view === "child"} onClick={() => setView("child")} icon={<Pencil size={19} />} label="Kindermodus" />
+        <Tab active={view === "certificate"} onClick={() => setView("certificate")} icon={<BookOpen size={19} />} label="Zeugnis" />
+        <Tab active={view === "people"} onClick={() => setView("people")} icon={<UsersRound size={19} />} label="Stammdaten" />
+        <Tab active={view === "history"} onClick={() => setView("history")} icon={<BarChart3 size={19} />} label="Verlauf" />
+        <Tab active={view === "reminders"} onClick={() => setView("reminders")} icon={<CalendarClock size={19} />} label="Erinnerungen" />
       </nav>
     </header>
   );
@@ -270,15 +280,6 @@ function AppWorkspace({
 }) {
   return (
     <div className="app-workspace">
-      <nav className="module-tabs" aria-label="Arbeitsbereiche">
-        <Tab active={view === "home"} onClick={() => setView("home")} icon={<Star size={19} />} label="Start" />
-        <Tab active={view === "child"} onClick={() => setView("child")} icon={<Pencil size={19} />} label="Kindermodus" />
-        <Tab active={view === "certificate"} onClick={() => setView("certificate")} icon={<BookOpen size={19} />} label="Zeugnis" />
-        <Tab active={view === "people"} onClick={() => setView("people")} icon={<UsersRound size={19} />} label="Stammdaten" />
-        <Tab active={view === "history"} onClick={() => setView("history")} icon={<BarChart3 size={19} />} label="Verlauf" />
-        <Tab active={view === "reminders"} onClick={() => setView("reminders")} icon={<CalendarClock size={19} />} label="Erinnerungen" />
-      </nav>
-
       {view === "home" ? <Dashboard data={data} setView={setView} /> : null}
       {view === "child" ? <ChildModeScreen data={data} setData={setData} setView={setView} /> : null}
       {view === "certificate" ? <CertificateScreen data={data} setData={setData} /> : null}

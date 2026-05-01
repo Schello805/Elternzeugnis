@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.6
+
+- Arbeitsbereich-Navigation in den Header verlegt
+- Navbar für Tablet-Nutzung horizontal scrollbar gemacht
+- Separate Tab-Leiste im Inhalt entfernt
+- Versionsnummer erhöht
+
 ## 0.1.5
 
 - Startauswahl vor dem Kindermodus ergänzt
