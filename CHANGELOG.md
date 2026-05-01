@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.9
+
+- Update-Skript migriert alte lokale Standardwerte auf LXC-Netzwerkbetrieb
+- Bestehende `HOST=127.0.0.1` Installationen werden automatisch auf `HOST=0.0.0.0` umgestellt
+- Bestehende `PORT=4174` Standardinstallationen werden automatisch auf `PORT=4147` umgestellt
+- README zur Update-Migration präzisiert
+- Versionsnummer erhöht
+
 ## 0.1.8
 
 - Server-Host für LXC-Installationen konfigurierbar gemacht

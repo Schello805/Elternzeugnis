@@ -7,6 +7,8 @@ SERVICE_NAME="${SERVICE_NAME:-elternzeugnis}"
 APP_HOST="${APP_HOST:-0.0.0.0}"
 APP_PORT="${APP_PORT:-4147}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/elternzeugnis}"
+OLD_DEFAULT_HOST="127.0.0.1"
+OLD_DEFAULT_PORT="4174"
 
 log() {
   printf '\n\033[1;32m==>\033[0m %s\n' "$*"
@@ -48,16 +50,55 @@ update_code() {
   git -C "${APP_DIR}" pull --ff-only origin main
 }
 
+env_value() {
+  local key="$1"
+  if [[ -f "${APP_DIR}/.env" ]]; then
+    sed -n "s/^${key}=//p" "${APP_DIR}/.env" | tail -n 1
+  fi
+}
+
+set_env_value() {
+  local key="$1"
+  local value="$2"
+  if grep -q "^${key}=" "${APP_DIR}/.env"; then
+    sed -i "s#^${key}=.*#${key}=${value}#" "${APP_DIR}/.env"
+  else
+    printf '%s=%s\n' "${key}" "${value}" >> "${APP_DIR}/.env"
+  fi
+}
+
+default_public_url() {
+  local server_ip=""
+  server_ip="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
+  if [[ -n "${server_ip}" ]]; then
+    printf 'http://%s:%s' "${server_ip}" "${APP_PORT}"
+  else
+    printf 'http://127.0.0.1:%s' "${APP_PORT}"
+  fi
+}
+
 ensure_runtime_env() {
   log "Laufzeitkonfiguration prüfen"
   [[ -f "${APP_DIR}/.env" ]] || cp "${APP_DIR}/.env.example" "${APP_DIR}/.env"
 
-  if ! grep -q '^HOST=' "${APP_DIR}/.env"; then
-    printf '\nHOST=%s\n' "${APP_HOST}" >> "${APP_DIR}/.env"
+  local current_host
+  current_host="$(env_value HOST)"
+  if [[ -z "${current_host}" || "${current_host}" == "${OLD_DEFAULT_HOST}" || "${current_host}" == "localhost" ]]; then
+    set_env_value HOST "${APP_HOST}"
   fi
 
-  if ! grep -q '^PORT=' "${APP_DIR}/.env"; then
-    printf 'PORT=%s\n' "${APP_PORT}" >> "${APP_DIR}/.env"
+  local current_port
+  current_port="$(env_value PORT)"
+  if [[ -z "${current_port}" || "${current_port}" == "${OLD_DEFAULT_PORT}" ]]; then
+    set_env_value PORT "${APP_PORT}"
+  else
+    APP_PORT="${current_port}"
+  fi
+
+  local current_url
+  current_url="$(env_value APP_URL)"
+  if [[ -z "${current_url}" || "${current_url}" == "http://127.0.0.1:5173" || "${current_url}" == "http://127.0.0.1:${OLD_DEFAULT_PORT}" ]]; then
+    set_env_value APP_URL "${PUBLIC_URL:-$(default_public_url)}"
   fi
 }
 

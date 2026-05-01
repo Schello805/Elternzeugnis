@@ -119,7 +119,7 @@ Das Update-Skript:
 - startet den systemd-Service neu
 - prüft Service, Healthcheck und Frontend
 
-Das Update überschreibt bestehende SMTP- oder Erinnerungsdaten nicht. Falls eine ältere Installation noch keinen `HOST`-Eintrag in `.env` hat, ergänzt das Skript ihn automatisch mit `0.0.0.0`.
+Das Update überschreibt bestehende SMTP- oder Erinnerungsdaten nicht. Ältere Standardwerte werden aber automatisch auf den Netzwerkbetrieb migriert: `HOST=127.0.0.1` wird zu `HOST=0.0.0.0`, `PORT=4174` wird zu `PORT=4147`. Eigene abweichende Ports bleiben erhalten.
 
 ## Erinnerungen per E-Mail
 
