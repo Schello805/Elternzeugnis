@@ -241,7 +241,7 @@ function Header() {
     <header className="topbar">
       <div className="brand" aria-label="Elternzeugnis">
         <span className="brand-mark">
-          <BookOpen size={23} />
+          <img src="/logo-elternzeugnis.png" alt="" />
         </span>
         <span>
           <strong>Elternzeugnis</strong>

@@ -76,13 +76,21 @@ a:focus-visible {
 .brand-mark,
 .legal-icon {
   align-items: center;
-  background: #24594c;
+  background: #fffdf7;
+  border: 1px solid #e3d8c4;
   border-radius: 8px;
-  color: white;
   display: inline-flex;
   height: 46px;
   justify-content: center;
+  overflow: hidden;
   width: 46px;
+}
+
+.brand-mark img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 .brand strong,

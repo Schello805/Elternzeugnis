@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.3
+
+- Logo als App-Logo eingebunden
+- Favicon und Web-App-Icons ergänzt
+- Web-App-Manifest ergänzt
+- Versionsnummer erhöht
+
 ## 0.1.2
 
 - Installationsskript für Debian und Ubuntu ergänzt

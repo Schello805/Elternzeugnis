@@ -26,6 +26,7 @@ Kinder sollen nicht einfach „bewerten“, sondern ausdrücken können, was ihn
 - PDF-Export
 - mehrere Zeugnisdesigns
 - Design-Auswahl mit Mini-Vorschau
+- App-Logo, Favicon und Web-App-Manifest
 - Export und Import der App-Daten
 - Footer mit GitHub-Link und automatischer Versions-/Revisionsanzeige
 
