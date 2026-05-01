@@ -6,6 +6,8 @@ Eine tabletfreundliche Web-App, mit der Kinder ein liebevolles, humorvolles und 
 
 Kinder sollen nicht einfach „bewerten“, sondern lernen, ihre Wahrnehmung freundlich und klar auszudrücken: Was tut mir gut? Wo brauche ich mehr Unterstützung? Welcher gemeinsame Moment war wichtig? Die App verbindet spielerische Schulnoten mit positiven Formulierungen, Freitextfeldern und pädagogischen Hinweisen bei schwierigen Bewertungen.
 
+Der pädagogische Kern ist ein Gespräch auf Augenhöhe. Ein Elternzeugnis soll kein Pranger sein, sondern ein leichter Einstieg in Familienreflexion: Kinder üben, Bedürfnisse zu benennen, Eltern bekommen konkrete Hinweise, und beide Seiten können gemeinsam kleine nächste Schritte vereinbaren.
+
 ## Funktionen
 
 - Zeugnis-Editor für Tablet, Desktop und Smartphone
@@ -26,7 +28,7 @@ Kinder sollen nicht einfach „bewerten“, sondern lernen, ihre Wahrnehmung fre
 - Erinnerungssystem mit SMTP-Konfiguration über `.env`
 - SMTP-Konfiguration und Testmail direkt im Frontend
 - PDF-Export
-- mehrere Zeugnisdesigns
+- vier deutlich unterschiedliche Zeugnisdesigns: Urkundenstil, Stickerbogen, Naturtagebuch und Sternenmission
 - Design-Auswahl mit Mini-Vorschau
 - App-Logo, Favicon und Web-App-Manifest
 - Export und Import der App-Daten
@@ -51,6 +53,8 @@ Die Reminder-API läuft unter:
 http://127.0.0.1:4174/
 ```
 
+Für die lokale Entwicklung bleibt die API absichtlich auf `127.0.0.1` gebunden. Für eine Installation im LXC nutzt das Installationsskript dagegen `0.0.0.0`, damit Tablets im Heimnetz die App erreichen können.
+
 ## Installation auf Debian oder Ubuntu
 
 Das Installationsskript richtet Node.js, Abhängigkeiten, Build, `.env`, systemd-Service und Prüfungen ein:
@@ -63,12 +67,22 @@ Standardwerte:
 
 - App-Verzeichnis: `/opt/elternzeugnis`
 - Service: `elternzeugnis`
-- Adresse: `http://127.0.0.1:4174/`
+- Host-Bindung: `0.0.0.0`
+- Port: `4147`
+- lokale Serveradresse: `http://127.0.0.1:4147/`
+- Netzwerkadresse im LXC-Beispiel: `http://10.10.50.109:4147/`
 
-Optionale Anpassung:
+Empfohlene Installation für einen LXC, der im Netzwerk unter `10.10.50.109` erreichbar ist:
 
 ```bash
-APP_DIR=/opt/elternzeugnis APP_PORT=4174 sudo -E bash scripts/install-debian-ubuntu.sh
+curl -fsSL https://raw.githubusercontent.com/Schello805/Elternzeugnis/main/scripts/install-debian-ubuntu.sh -o install-elternzeugnis.sh
+sudo APP_PORT=4147 APP_HOST=0.0.0.0 PUBLIC_URL=http://10.10.50.109:4147 bash install-elternzeugnis.sh
+```
+
+Optionale Anpassung aus einem lokalen Checkout:
+
+```bash
+sudo APP_DIR=/opt/elternzeugnis APP_PORT=4147 APP_HOST=0.0.0.0 PUBLIC_URL=http://10.10.50.109:4147 bash scripts/install-debian-ubuntu.sh
 ```
 
 Das Skript prüft anschließend:
@@ -77,6 +91,16 @@ Das Skript prüft anschließend:
 - `/api/health` antwortet
 - Frontend ist erreichbar
 - Node.js und npm sind verfügbar
+
+Wenn die App im LXC selbst erreichbar ist, aber nicht vom Tablet, helfen diese Prüfungen:
+
+```bash
+sudo systemctl status elternzeugnis --no-pager
+curl -fsS http://127.0.0.1:4147/api/health
+sudo ss -ltnp | grep 4147
+```
+
+Der Healthcheck sollte `host` und `port` anzeigen. Wenn dort `host` auf `0.0.0.0` steht und `127.0.0.1:4147` funktioniert, liegt ein verbleibendes Problem meist an LXC-, Proxmox- oder Firewall-Regeln.
 
 ## Update auf Debian oder Ubuntu
 
@@ -94,6 +118,8 @@ Das Update-Skript:
 - baut die App neu
 - startet den systemd-Service neu
 - prüft Service, Healthcheck und Frontend
+
+Das Update überschreibt bestehende SMTP- oder Erinnerungsdaten nicht. Falls eine ältere Installation noch keinen `HOST`-Eintrag in `.env` hat, ergänzt das Skript ihn automatisch mit `0.0.0.0`.
 
 ## Erinnerungen per E-Mail
 
@@ -133,6 +159,7 @@ Beim Starten und Bauen wird automatisch `src/generated/version.ts` aktualisiert.
 - Erst Stärken wahrnehmen, dann einen nächsten Schritt vereinbaren.
 - Eltern werden nicht beschämt, sondern zum Zuhören und Nachfragen eingeladen.
 - Wiederholte Zeugnisse machen sichtbar, welche Bedürfnisse konstant bleiben und wo Beziehung wächst.
+- Verschiedene Designs unterstützen unterschiedliche Kinder: feierlich, verspielt, ruhig-naturnah oder abenteuerlich.
 
 ## Daten
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.8
+
+- Server-Host für LXC-Installationen konfigurierbar gemacht
+- Installations- und Update-Skript auf Netzwerkbetrieb mit Port 4147 vorbereitet
+- README mit LXC-Zugriff, Prüfkommandos und pädagogischem Ansatz aktualisiert
+- Vier deutlich unterschiedliche Zeugnisdesigns ergänzt
+- Versionsnummer erhöht
+
 ## 0.1.7
 
 - Testmail-Fehlerbehandlung verbessert

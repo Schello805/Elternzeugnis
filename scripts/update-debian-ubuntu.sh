@@ -4,7 +4,8 @@ set -Eeuo pipefail
 APP_DIR="${APP_DIR:-/opt/elternzeugnis}"
 APP_USER="${APP_USER:-elternzeugnis}"
 SERVICE_NAME="${SERVICE_NAME:-elternzeugnis}"
-APP_PORT="${APP_PORT:-4174}"
+APP_HOST="${APP_HOST:-0.0.0.0}"
+APP_PORT="${APP_PORT:-4147}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/elternzeugnis}"
 
 log() {
@@ -47,6 +48,19 @@ update_code() {
   git -C "${APP_DIR}" pull --ff-only origin main
 }
 
+ensure_runtime_env() {
+  log "Laufzeitkonfiguration prüfen"
+  [[ -f "${APP_DIR}/.env" ]] || cp "${APP_DIR}/.env.example" "${APP_DIR}/.env"
+
+  if ! grep -q '^HOST=' "${APP_DIR}/.env"; then
+    printf '\nHOST=%s\n' "${APP_HOST}" >> "${APP_DIR}/.env"
+  fi
+
+  if ! grep -q '^PORT=' "${APP_DIR}/.env"; then
+    printf 'PORT=%s\n' "${APP_PORT}" >> "${APP_DIR}/.env"
+  fi
+}
+
 build_app() {
   log "Abhängigkeiten aktualisieren und App bauen"
   npm --prefix "${APP_DIR}" ci
@@ -78,7 +92,12 @@ verify_update() {
   curl -fsS "http://127.0.0.1:${APP_PORT}/api/health" >/dev/null || fail "Healthcheck fehlgeschlagen."
   curl -fsSI "http://127.0.0.1:${APP_PORT}/" >/dev/null || fail "Frontend ist nicht erreichbar."
   cat /tmp/elternzeugnis-health.json
-  printf '\n\nUpdate fertig. Elternzeugnis läuft unter: http://127.0.0.1:%s/\n' "${APP_PORT}"
+  local server_ip=""
+  server_ip="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
+  printf '\n\nUpdate fertig. Lokal auf dem Server: http://127.0.0.1:%s/\n' "${APP_PORT}"
+  if [[ -n "${server_ip}" ]]; then
+    printf 'Im Netzwerk erreichbar unter: http://%s:%s/\n' "${server_ip}" "${APP_PORT}"
+  fi
 }
 
 main() {
@@ -86,6 +105,7 @@ main() {
   check_installation
   backup_data
   update_code
+  ensure_runtime_env
   build_app
   restart_service
   verify_update

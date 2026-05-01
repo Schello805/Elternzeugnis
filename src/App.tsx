@@ -191,12 +191,22 @@ const initialData: AppData = {
 
 function designLabel(design: Design) {
   const labels: Record<Design, string> = {
-    classic: "Klassisch",
-    rainbow: "Bunt",
-    forest: "Natur",
-    space: "Sterne",
+    classic: "Urkundenstil",
+    rainbow: "Stickerbogen",
+    forest: "Naturtagebuch",
+    space: "Sternenmission",
   };
   return labels[design];
+}
+
+function designSubtitle(design: Design) {
+  const subtitles: Record<Design, string> = {
+    classic: "feierlich, ruhig und klar",
+    rainbow: "bunt, spielerisch und mutmachend",
+    forest: "achtsam, warm und beobachtend",
+    space: "abenteuerlich, stark und zielorientiert",
+  };
+  return subtitles[design];
 }
 
 function loadData(): AppData {
@@ -688,6 +698,7 @@ function CertificateScreen({
           <p>Schuljahr {data.draft.year || "____ / ____"}</p>
           <h2>Zeugnis für {parent?.name || "____________"}</h2>
           <span>ausgestellt von {child?.name || "____________"}</span>
+          <small className="design-subtitle">{designSubtitle(data.draft.design)}</small>
         </header>
 
         <div className="grade-table">

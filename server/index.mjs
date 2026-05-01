@@ -18,6 +18,7 @@ const app = express();
 
 dotenv.config({ path: envFile });
 const port = Number(process.env.PORT || 4174);
+const host = process.env.HOST || "127.0.0.1";
 
 function appVersion() {
   try {
@@ -56,6 +57,7 @@ function smtpConfig() {
 async function writeEnvConfig(config) {
   const values = {
     PORT: String(process.env.PORT || 4174),
+    HOST: String(process.env.HOST || "127.0.0.1"),
     APP_URL: String(config.appUrl || "http://127.0.0.1:5173"),
     SMTP_HOST: String(config.host || ""),
     SMTP_PORT: String(config.port || "587"),
@@ -184,6 +186,8 @@ app.get("/api/health", (_request, response) => {
   response.json({
     ok: true,
     version: appVersion(),
+    host,
+    port,
     distAvailable: existsSync(indexFile),
     smtpConfigured: smtpConfigured(),
     time: new Date().toISOString(),
@@ -269,6 +273,7 @@ cron.schedule("* * * * *", () => {
   });
 });
 
-app.listen(port, "127.0.0.1", () => {
-  console.log(`Elternzeugnis listening on http://127.0.0.1:${port}`);
+app.listen(port, host, () => {
+  const displayHost = host === "0.0.0.0" ? "127.0.0.1" : host;
+  console.log(`Elternzeugnis listening on http://${displayHost}:${port}`);
 });

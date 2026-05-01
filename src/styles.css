@@ -486,28 +486,67 @@ textarea {
   position: relative;
 }
 
+.certificate-sheet::before {
+  content: "";
+  inset: 16px;
+  pointer-events: none;
+  position: absolute;
+}
+
+.certificate-sheet.design-classic {
+  background:
+    linear-gradient(90deg, rgba(115, 82, 42, 0.05) 1px, transparent 1px),
+    linear-gradient(#fffaf0, #fff6e6);
+  border: 12px solid #b88a46;
+  box-shadow: 0 22px 55px rgba(70, 45, 18, 0.16);
+  color: #2f2518;
+}
+
+.certificate-sheet.design-classic::before {
+  border: 4px double #7d5a28;
+  border-radius: 3px;
+}
+
 .certificate-sheet.design-rainbow {
   background:
-    linear-gradient(#fffdf7, #fffdf7) padding-box,
-    linear-gradient(135deg, #d94f43, #f0b84d, #2f8bb2, #24594c) border-box;
+    radial-gradient(circle at 12% 18%, rgba(240, 184, 77, 0.28) 0 8px, transparent 9px),
+    radial-gradient(circle at 86% 20%, rgba(47, 139, 178, 0.24) 0 11px, transparent 12px),
+    radial-gradient(circle at 78% 84%, rgba(217, 79, 67, 0.22) 0 10px, transparent 11px),
+    #fffdf7;
   border: 10px solid transparent;
+  border-image: linear-gradient(135deg, #d94f43, #f0b84d, #2f8bb2, #24594c) 1;
+  box-shadow: 0 18px 40px rgba(217, 79, 67, 0.18);
+  color: #263730;
 }
 
 .certificate-sheet.design-forest {
-  background: #f7fbf1;
-  border-color: #8aa16d;
+  background:
+    linear-gradient(90deg, rgba(138, 161, 109, 0.12) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(#f7fbf1, #eef6e4);
+  border: 2px solid #8aa16d;
+  border-left: 18px solid #6f8757;
+  box-shadow: 0 18px 48px rgba(68, 91, 54, 0.15);
   color: #203b2f;
 }
 
 .certificate-sheet.design-space {
-  background: radial-gradient(circle at top left, #2c4267 0, #172034 42%, #111827 100%);
-  border-color: #9fb8df;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(249, 214, 122, 0.22) 0 2px, transparent 3px),
+    radial-gradient(circle at 76% 18%, rgba(136, 203, 218, 0.3) 0 2px, transparent 3px),
+    radial-gradient(circle at 84% 72%, rgba(255, 255, 255, 0.2) 0 1px, transparent 2px),
+    radial-gradient(circle at top left, #2c4267 0, #172034 42%, #111827 100%);
+  border: 1px solid #6ea6c8;
+  border-radius: 0;
+  box-shadow: 0 24px 60px rgba(17, 24, 39, 0.3);
   color: #fff8dc;
 }
 
 .certificate-sheet.design-space input,
-.certificate-sheet.design-space textarea {
-  background: rgba(255, 255, 255, 0.92);
+.certificate-sheet.design-space textarea,
+.certificate-sheet.design-space select {
+  background: rgba(15, 23, 42, 0.72);
+  border-color: rgba(159, 184, 223, 0.5);
+  color: #fff8dc;
 }
 
 .design-picker {
@@ -619,6 +658,7 @@ textarea {
   padding-bottom: 18px;
   position: relative;
   text-align: center;
+  z-index: 1;
 }
 
 .certificate-badge {
@@ -633,8 +673,16 @@ textarea {
 }
 
 .certificate-head p,
-.certificate-head span {
+.certificate-head span,
+.certificate-head small {
   margin: 0;
+}
+
+.design-subtitle {
+  color: #66736d;
+  display: block;
+  font-weight: 800;
+  margin-top: 8px;
 }
 
 .certificate-head h2 {
@@ -648,6 +696,8 @@ textarea {
   display: grid;
   gap: 12px;
   margin: 24px 0;
+  position: relative;
+  z-index: 1;
 }
 
 .grade-line {
@@ -690,6 +740,164 @@ textarea {
   color: white;
 }
 
+.certificate-sheet.design-classic .certificate-head {
+  border-bottom-color: #7d5a28;
+}
+
+.certificate-sheet.design-classic .certificate-badge {
+  background: #fff7df;
+  color: #6e4c1e;
+}
+
+.certificate-sheet.design-classic .grade-line {
+  border-bottom: 1px solid #bfa270;
+  grid-template-columns: minmax(180px, 1fr) minmax(280px, 340px);
+}
+
+.certificate-sheet.design-classic .grade-picker button {
+  background: #fff4d8;
+  border-color: #c49a54;
+}
+
+.certificate-sheet.design-classic .grade-picker .selected {
+  background: #7d5a28;
+  border-color: #7d5a28;
+}
+
+.certificate-sheet.design-rainbow .certificate-head {
+  border-bottom: 0;
+}
+
+.certificate-sheet.design-rainbow .certificate-badge {
+  background: #ffe9e5;
+  border-color: #d94f43;
+  box-shadow: 8px 8px 0 #c8e5ed;
+  color: #9f352d;
+  transform: rotate(-1deg);
+}
+
+.certificate-sheet.design-rainbow .design-subtitle {
+  color: #2f6678;
+}
+
+.certificate-sheet.design-rainbow .grade-table {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.certificate-sheet.design-rainbow .grade-line {
+  background: #ffffff;
+  border: 3px solid #f0b84d;
+  border-radius: 22px;
+  box-shadow: 7px 7px 0 rgba(47, 139, 178, 0.18);
+  grid-template-columns: 1fr;
+  padding: 16px;
+}
+
+.certificate-sheet.design-rainbow .grade-line:nth-child(even) {
+  border-color: #2f8bb2;
+  box-shadow: 7px 7px 0 rgba(217, 79, 67, 0.16);
+  transform: rotate(0.4deg);
+}
+
+.certificate-sheet.design-rainbow .grade-picker button {
+  background: #fff1b8;
+  border: 0;
+  border-radius: 999px;
+}
+
+.certificate-sheet.design-rainbow .grade-picker .selected {
+  background: #d94f43;
+}
+
+.certificate-sheet.design-forest .certificate-head {
+  border-bottom: 2px dashed #8aa16d;
+  text-align: left;
+}
+
+.certificate-sheet.design-forest .certificate-badge {
+  background: #e6f0d9;
+  border-color: #6f8757;
+  border-radius: 8px 28px 8px 28px;
+  color: #2c4f3a;
+}
+
+.certificate-sheet.design-forest .grade-line {
+  background: rgba(255, 255, 255, 0.55);
+  border: 0;
+  border-left: 6px solid #8aa16d;
+  border-radius: 0 8px 8px 0;
+  grid-template-columns: minmax(160px, 1fr) minmax(260px, 340px);
+  padding: 13px 14px;
+}
+
+.certificate-sheet.design-forest .grade-line small,
+.certificate-sheet.design-forest .design-subtitle {
+  color: #58705a;
+}
+
+.certificate-sheet.design-forest .grade-picker button {
+  background: #edf5df;
+  border-color: #9fb17d;
+  border-radius: 4px 18px 4px 18px;
+}
+
+.certificate-sheet.design-forest .grade-picker .selected {
+  background: #4f6f3e;
+  border-color: #4f6f3e;
+}
+
+.certificate-sheet.design-space .certificate-head {
+  border-bottom: 1px solid rgba(159, 184, 223, 0.45);
+  text-align: left;
+}
+
+.certificate-sheet.design-space .certificate-badge {
+  background: rgba(24, 38, 68, 0.9);
+  border-color: #8ad3e6;
+  border-radius: 4px;
+  color: #9ee7f7;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.certificate-sheet.design-space .certificate-head h2 {
+  font-family: Inter, system-ui, sans-serif;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.certificate-sheet.design-space .design-subtitle,
+.certificate-sheet.design-space .grade-line small {
+  color: #b7d9ec;
+}
+
+.certificate-sheet.design-space .grade-table {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.certificate-sheet.design-space .grade-line {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(110, 166, 200, 0.5);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  grid-template-columns: 1fr;
+  padding: 15px;
+}
+
+.certificate-sheet.design-space .grade-picker button {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(159, 184, 223, 0.35);
+  border-radius: 50%;
+  color: #fff8dc;
+}
+
+.certificate-sheet.design-space .grade-picker .selected {
+  background: #f9d67a;
+  border-color: #f9d67a;
+  color: #142034;
+}
+
 .inline-advice {
   align-items: flex-start;
   display: grid;
@@ -722,6 +930,28 @@ textarea {
   display: grid;
   gap: 14px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  position: relative;
+  z-index: 1;
+}
+
+.certificate-sheet.design-rainbow .certificate-fields label {
+  background: #fff;
+  border: 2px solid #f0b84d;
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.certificate-sheet.design-forest .certificate-fields label {
+  background: rgba(255, 255, 255, 0.55);
+  border-left: 5px solid #8aa16d;
+  padding: 12px;
+}
+
+.certificate-sheet.design-space .certificate-fields label {
+  background: rgba(15, 23, 42, 0.68);
+  border: 1px solid rgba(110, 166, 200, 0.45);
+  border-radius: 4px;
+  padding: 12px;
 }
 
 .certificate-fields label:nth-child(3) {
@@ -734,6 +964,8 @@ textarea {
   gap: 20px;
   justify-content: space-between;
   margin-top: 30px;
+  position: relative;
+  z-index: 1;
 }
 
 .certificate-signature strong {
@@ -1019,6 +1251,11 @@ textarea {
   .form-grid,
   .chart-grid,
   .certificate-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .certificate-sheet.design-rainbow .grade-table,
+  .certificate-sheet.design-space .grade-table {
     grid-template-columns: 1fr;
   }
 

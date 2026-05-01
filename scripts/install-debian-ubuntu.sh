@@ -5,7 +5,9 @@ REPO_URL="${REPO_URL:-https://github.com/Schello805/Elternzeugnis.git}"
 APP_DIR="${APP_DIR:-/opt/elternzeugnis}"
 APP_USER="${APP_USER:-elternzeugnis}"
 SERVICE_NAME="${SERVICE_NAME:-elternzeugnis}"
-APP_PORT="${APP_PORT:-4174}"
+APP_HOST="${APP_HOST:-0.0.0.0}"
+APP_PORT="${APP_PORT:-4147}"
+PUBLIC_URL="${PUBLIC_URL:-http://127.0.0.1:${APP_PORT}}"
 NODE_MAJOR="${NODE_MAJOR:-20}"
 
 log() {
@@ -90,10 +92,16 @@ configure_env() {
     printf '\nPORT=%s\n' "${APP_PORT}" >> "${APP_DIR}/.env"
   fi
 
-  if grep -q '^APP_URL=' "${APP_DIR}/.env"; then
-    sed -i "s#^APP_URL=.*#APP_URL=http://127.0.0.1:${APP_PORT}#" "${APP_DIR}/.env"
+  if grep -q '^HOST=' "${APP_DIR}/.env"; then
+    sed -i "s/^HOST=.*/HOST=${APP_HOST}/" "${APP_DIR}/.env"
   else
-    printf 'APP_URL=http://127.0.0.1:%s\n' "${APP_PORT}" >> "${APP_DIR}/.env"
+    printf 'HOST=%s\n' "${APP_HOST}" >> "${APP_DIR}/.env"
+  fi
+
+  if grep -q '^APP_URL=' "${APP_DIR}/.env"; then
+    sed -i "s#^APP_URL=.*#APP_URL=${PUBLIC_URL}#" "${APP_DIR}/.env"
+  else
+    printf 'APP_URL=%s\n' "${PUBLIC_URL}" >> "${APP_DIR}/.env"
   fi
 }
 
@@ -150,7 +158,12 @@ verify_installation() {
   node --version
   npm --version
   cat /tmp/elternzeugnis-health.json
-  printf '\n\nFertig. Elternzeugnis läuft unter: http://127.0.0.1:%s/\n' "${APP_PORT}"
+  local server_ip=""
+  server_ip="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
+  printf '\n\nFertig. Lokal auf dem Server: http://127.0.0.1:%s/\n' "${APP_PORT}"
+  if [[ -n "${server_ip}" ]]; then
+    printf 'Im Netzwerk erreichbar unter: http://%s:%s/\n' "${server_ip}" "${APP_PORT}"
+  fi
 }
 
 main() {
