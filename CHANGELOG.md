@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.2
+
+- Installationsskript für Debian und Ubuntu ergänzt
+- Update-Skript mit Backup und Prüfungen ergänzt
+- Server kann den Produktions-Build aus `dist` ausliefern
+- Healthcheck unter `/api/health` ergänzt
+- Versionsnummer erhöht
+
 ## 0.1.1
 
 - Footer-Text vereinfacht

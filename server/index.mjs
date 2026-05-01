@@ -2,20 +2,36 @@ import cron from "node-cron";
 import express from "express";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
+import { existsSync, readFileSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const packageFile = resolve(root, "package.json");
 const dataFile = resolve(root, "data/reminders.json");
 const envFile = resolve(root, ".env");
+const distDir = resolve(root, "dist");
+const indexFile = resolve(distDir, "index.html");
 const app = express();
 
 dotenv.config({ path: envFile });
 const port = Number(process.env.PORT || 4174);
 
+function appVersion() {
+  try {
+    return JSON.parse(readFileSync(packageFile, "utf8")).version || "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
 app.use(express.json({ limit: "1mb" }));
+
+if (existsSync(distDir)) {
+  app.use(express.static(distDir));
+}
 
 function smtpConfigured() {
   return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
@@ -151,6 +167,16 @@ app.get("/api/reminders/status", (_request, response) => {
   });
 });
 
+app.get("/api/health", (_request, response) => {
+  response.json({
+    ok: true,
+    version: appVersion(),
+    distAvailable: existsSync(indexFile),
+    smtpConfigured: smtpConfigured(),
+    time: new Date().toISOString(),
+  });
+});
+
 app.get("/api/smtp/config", (_request, response) => {
   response.json(smtpConfig());
 });
@@ -207,6 +233,12 @@ app.delete("/api/reminders/:id", async (request, response) => {
   response.status(204).end();
 });
 
+if (existsSync(indexFile)) {
+  app.get(/^(?!\/api).*/, (_request, response) => {
+    response.sendFile(indexFile);
+  });
+}
+
 cron.schedule("* * * * *", () => {
   processDueReminders().catch((error) => {
     console.error("Reminder processing failed", error);
@@ -214,5 +246,5 @@ cron.schedule("* * * * *", () => {
 });
 
 app.listen(port, "127.0.0.1", () => {
-  console.log(`Reminder API listening on http://127.0.0.1:${port}`);
+  console.log(`Elternzeugnis listening on http://127.0.0.1:${port}`);
 });

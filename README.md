@@ -48,6 +48,50 @@ Die Reminder-API läuft unter:
 http://127.0.0.1:4174/
 ```
 
+## Installation auf Debian oder Ubuntu
+
+Das Installationsskript richtet Node.js, Abhängigkeiten, Build, `.env`, systemd-Service und Prüfungen ein:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Schello805/Elternzeugnis/main/scripts/install-debian-ubuntu.sh | sudo bash
+```
+
+Standardwerte:
+
+- App-Verzeichnis: `/opt/elternzeugnis`
+- Service: `elternzeugnis`
+- Adresse: `http://127.0.0.1:4174/`
+
+Optionale Anpassung:
+
+```bash
+APP_DIR=/opt/elternzeugnis APP_PORT=4174 sudo -E bash scripts/install-debian-ubuntu.sh
+```
+
+Das Skript prüft anschließend:
+
+- systemd-Service ist aktiv
+- `/api/health` antwortet
+- Frontend ist erreichbar
+- Node.js und npm sind verfügbar
+
+## Update auf Debian oder Ubuntu
+
+Im installierten Repository:
+
+```bash
+sudo /opt/elternzeugnis/scripts/update-debian-ubuntu.sh
+```
+
+Das Update-Skript:
+
+- sichert `.env` und `data/` nach `/var/backups/elternzeugnis`
+- zieht `origin/main`
+- installiert Abhängigkeiten per `npm ci`
+- baut die App neu
+- startet den systemd-Service neu
+- prüft Service, Healthcheck und Frontend
+
 ## Erinnerungen per E-Mail
 
 Erstelle eine `.env` Datei nach dem Muster aus `.env.example`:
