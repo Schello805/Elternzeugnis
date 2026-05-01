@@ -370,8 +370,13 @@ function ChildModeScreen({
 }) {
   const child = data.children.find((person) => person.id === data.draft.childId) || data.children[0];
   const parent = data.parents.find((person) => person.id === data.draft.parentId) || data.parents[0];
+  const [setupDone, setSetupDone] = useState(false);
   const [focusIndex, setFocusIndex] = useState(0);
   const category = categories[focusIndex];
+
+  const updateDraft = <Key extends keyof Certificate>(key: Key, value: Certificate[Key]) => {
+    setData((current) => ({ ...current, draft: { ...current.draft, [key]: value } }));
+  };
 
   const updateGrade = (grade: number) => {
     setData((current) => ({
@@ -385,6 +390,76 @@ function ChildModeScreen({
 
   const next = () => setFocusIndex((current) => Math.min(current + 1, categories.length - 1));
   const previous = () => setFocusIndex((current) => Math.max(current - 1, 0));
+
+  if (!setupDone) {
+    return (
+      <section className="child-mode">
+        <div className="child-card setup-card">
+          <p className="eyebrow">Vor dem Start</p>
+          <h1>Für wen wird dieses Elternzeugnis ausgefüllt?</h1>
+          <p className="setup-intro">
+            Erst wählen wir Kind, Elternteil und Zeugnisjahr. Danach sieht das Kind nur noch die
+            einfachen Fragen im Kindermodus.
+          </p>
+          <div className="form-grid">
+            <label>
+              Kind
+              <select value={data.draft.childId} onChange={(event) => updateDraft("childId", event.target.value)}>
+                {data.children.map((person) => (
+                  <option key={person.id} value={person.id}>
+                    {person.name || "Unbenanntes Kind"}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Elternteil oder Bezugsperson
+              <select value={data.draft.parentId} onChange={(event) => updateDraft("parentId", event.target.value)}>
+                {data.parents.map((person) => (
+                  <option key={person.id} value={person.id}>
+                    {person.name || "Unbenannter Elternteil"}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Zeugnisjahr
+              <input value={data.draft.year} onChange={(event) => updateDraft("year", event.target.value)} />
+            </label>
+            <label>
+              Datum
+              <input type="date" value={data.draft.date} onChange={(event) => updateDraft("date", event.target.value)} />
+            </label>
+          </div>
+          <fieldset className="design-picker design-preview-picker child-design-picker">
+            <legend>Design für das Zeugnis</legend>
+            {(["classic", "rainbow", "forest", "space"] as Design[]).map((design) => (
+              <button
+                key={design}
+                className={data.draft.design === design ? "selected" : ""}
+                onClick={() => updateDraft("design", design)}
+                type="button"
+              >
+                <span className={`design-preview ${design}`}>
+                  <span />
+                  <i />
+                </span>
+                {designLabel(design)}
+              </button>
+            ))}
+          </fieldset>
+          <div className="hero-actions">
+            <button className="secondary-button" onClick={() => setView("people")}>
+              Stammdaten bearbeiten
+            </button>
+            <button className="primary-button" onClick={() => setSetupDone(true)}>
+              <Pencil size={19} /> Kindermodus starten
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="child-mode">
@@ -414,9 +489,15 @@ function ChildModeScreen({
         </div>
         {data.draft.grades[category.id] >= 5 ? <WishChips category={category} setData={setData} /> : null}
         <div className="hero-actions">
-          <button className="secondary-button" onClick={previous} disabled={focusIndex === 0}>
-            Zurück
-          </button>
+          {focusIndex === 0 ? (
+            <button className="secondary-button" onClick={() => setSetupDone(false)}>
+              Auswahl ändern
+            </button>
+          ) : (
+            <button className="secondary-button" onClick={previous}>
+              Zurück
+            </button>
+          )}
           {focusIndex === categories.length - 1 ? (
             <button className="primary-button" onClick={() => setView("certificate")}>
               <CheckCircle2 size={19} /> Zum Zeugnis

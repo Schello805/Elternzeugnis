@@ -12,6 +12,7 @@ Kinder sollen nicht einfach „bewerten“, sondern lernen, ihre Wahrnehmung fre
 - direkte Eingabe der Noten im Zeugnisdesign
 - Start-Dashboard für die wichtigsten Wege
 - Kindermodus mit großer Touch-Bedienung
+- Startauswahl für Kind, Elternteil, Jahr und Design vor dem Kindermodus
 - beziehungsorientierte Fragen statt reiner Leistungsbewertung
 - Stammdaten für Kinder, Eltern und Bezugspersonen
 - Verlauf über gespeicherte Zeugnisse pro Jahr

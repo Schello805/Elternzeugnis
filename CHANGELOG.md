@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.5
+
+- Startauswahl vor dem Kindermodus ergänzt
+- Kind, Elternteil, Zeugnisjahr, Datum und Design werden vor der Bewertung gewählt
+- Versionsnummer erhöht
+
 ## 0.1.4
 
 - App-Texte pädagogisch geschärft

@@ -251,6 +251,21 @@ main {
   width: 100%;
 }
 
+.setup-card {
+  max-width: 1040px;
+}
+
+.setup-intro {
+  color: #51605b;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  max-width: 760px;
+}
+
+.child-design-picker {
+  margin: 16px 0 0;
+}
+
 .progress-track {
   background: #eadfcb;
   border-radius: 999px;
