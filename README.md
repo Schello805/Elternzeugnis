@@ -1,33 +1,32 @@
 # Elternzeugnis
 
-Eine tabletfreundliche Web-App, mit der Kinder ein liebevolles, humorvolles und paedagogisch sinnvolles Zeugnis fuer Eltern oder andere Bezugspersonen erstellen koennen.
+Eine tabletfreundliche Web-App, mit der Kinder ein liebevolles, humorvolles und pädagogisch sinnvolles Zeugnis für Eltern oder andere Bezugspersonen erstellen können.
 
 ## Idee
 
-Kinder sollen nicht einfach „bewerten“, sondern ausdruecken koennen, was ihnen gut tut und was sie sich wuenschen. Die App verbindet spielerische Schulnoten mit positiven Formulierungen, Freitextfeldern und paedagogischen Hinweisen bei schwierigen Bewertungen.
+Kinder sollen nicht einfach „bewerten“, sondern ausdrücken können, was ihnen gut tut und was sie sich wünschen. Die App verbindet spielerische Schulnoten mit positiven Formulierungen, Freitextfeldern und pädagogischen Hinweisen bei schwierigen Bewertungen.
 
 ## Funktionen
 
-- Zeugnis-Editor fuer Tablet, Desktop und Smartphone
+- Zeugnis-Editor für Tablet, Desktop und Smartphone
 - direkte Eingabe der Noten im Zeugnisdesign
-- Start-Dashboard fuer die wichtigsten Wege
-- Kindermodus mit grosser Touch-Bedienung
-- Stammdaten fuer Kinder, Eltern und Bezugspersonen
-- Verlauf ueber gespeicherte Zeugnisse pro Jahr
+- Start-Dashboard für die wichtigsten Wege
+- Kindermodus mit großer Touch-Bedienung
+- Stammdaten für Kinder, Eltern und Bezugspersonen
+- Verlauf über gespeicherte Zeugnisse pro Jahr
 - grafische Auswertungen mit Durchschnitt und Kategorien
-- gefuehrte Leerzustaende und Erfolgsmeldungen
-- paedagogische Wunschbausteine bei schwierigen Bewertungen
-- Bewertungsbereiche wie Geduld, Zuhoeren, Spielzeit, Fairness und Lernhilfe
-- Paedagogische Hinweise bei Note 5 oder 6
+- geführte Leerzustände und Erfolgsmeldungen
+- pädagogische Wunschbausteine bei schwierigen Bewertungen
+- Bewertungsbereiche wie Geduld, Zuhören, Spielzeit, Fairness und Lernhilfe
+- Pädagogische Hinweise bei Note 5 oder 6
 - Zeugnisvorschau im druckbaren Format
-- Drucken oder als PDF speichern ueber den Browser
-- Erinnerungssystem mit SMTP-Konfiguration ueber `.env`
-- SMTP-Konfiguration und Testmail direkt im lokalen Frontend
-- PDF-Export ohne Cloud-Dienst
+- Drucken oder als PDF speichern über den Browser
+- Erinnerungssystem mit SMTP-Konfiguration über `.env`
+- SMTP-Konfiguration und Testmail direkt im Frontend
+- PDF-Export
 - mehrere Zeugnisdesigns
 - Design-Auswahl mit Mini-Vorschau
-- Export und Import der lokalen App-Daten
-- Lokale Speicherung im Browser, keine Serveruebertragung
+- Export und Import der App-Daten
 - Footer mit GitHub-Link und automatischer Versions-/Revisionsanzeige
 
 ## Lokale Entwicklung
@@ -37,13 +36,13 @@ npm install
 npm run dev
 ```
 
-Die App startet damit Frontend und Reminder-API. Das Frontend laeuft standardmaessig unter:
+Die App startet damit Frontend und Reminder-API. Das Frontend läuft standardmäßig unter:
 
 ```text
 http://127.0.0.1:5173/
 ```
 
-Die Reminder-API laeuft lokal unter:
+Die Reminder-API läuft unter:
 
 ```text
 http://127.0.0.1:4174/
@@ -51,7 +50,7 @@ http://127.0.0.1:4174/
 
 ## Erinnerungen per E-Mail
 
-Erstelle lokal eine `.env` Datei nach dem Muster aus `.env.example`:
+Erstelle eine `.env` Datei nach dem Muster aus `.env.example`:
 
 ```bash
 cp .env.example .env
@@ -68,7 +67,7 @@ SMTP_PASS=dein-passwort
 SMTP_FROM="Elternzeugnis <noreply@example.com>"
 ```
 
-Erinnerungen werden lokal in `data/reminders.json` gespeichert. Dieser Ordner wird nicht versioniert.
+Erinnerungen werden in `data/reminders.json` gespeichert. Dieser Ordner wird nicht versioniert.
 
 ## Build
 
@@ -78,19 +77,19 @@ npm run build
 
 Beim Starten und Bauen wird automatisch `src/generated/version.ts` aktualisiert. Die Anzeige im Footer nutzt die Paketversion aus `package.json` und, falls vorhanden, den aktuellen Git-Commit.
 
-## Paedagogische Leitlinien
+## Pädagogische Leitlinien
 
-- Das Kind steht mit seinen Beduerfnissen im Mittelpunkt.
-- Eine schlechte Note ist kein Angriff, sondern ein Gespraechsanlass.
+- Das Kind steht mit seinen Bedürfnissen im Mittelpunkt.
+- Eine schlechte Note ist kein Angriff, sondern ein Gesprächsanlass.
 - Die App formuliert Verbesserung als Wunsch, nicht als Vorwurf.
 - Bei Note 5 oder 6 erscheinen konkrete, kleine und familiennahe Handlungsideen.
-- Erst Staerken wahrnehmen, dann einen naechsten Schritt vereinbaren.
+- Erst Stärken wahrnehmen, dann einen nächsten Schritt vereinbaren.
 
-## Lokale Daten
+## Daten
 
-Die App ist fuer lokale Nutzung gedacht. Sie speichert Eingaben nur lokal im Browser des jeweiligen Geraets. Es werden keine Tracking-Dienste verwendet und keine Zeugnisdaten an externe Server gesendet.
+Die App speichert Eingaben im Browser des verwendeten Geräts. Es werden keine Tracking-Dienste verwendet.
 
-Fuer E-Mail-Erinnerungen speichert der lokale API-Server Erinnerungsdaten in `data/reminders.json`. SMTP-Zugangsdaten liegen ausschliesslich in der lokalen `.env` Datei. Die SMTP-Konfiguration kann ueber die lokale Oberflaeche gepflegt werden.
+Für E-Mail-Erinnerungen speichert der API-Server Erinnerungsdaten in `data/reminders.json`. SMTP-Zugangsdaten liegen in der `.env` Datei. Die SMTP-Konfiguration kann über die Oberfläche gepflegt werden.
 
 ## Repository
 
@@ -98,4 +97,4 @@ GitHub: <https://github.com/Schello805/Elternzeugnis>
 
 ## Lizenz
 
-Dieses Projekt ist zur freien nicht-kommerziellen Nutzung verfuegbar. Details stehen in der [LICENSE](LICENSE).
+Dieses Projekt ist zur freien nicht-kommerziellen Nutzung verfügbar. Details stehen in der [LICENSE](LICENSE).

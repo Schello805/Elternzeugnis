@@ -1,13 +1,13 @@
 # Contributing
 
-Danke fuer dein Interesse an Elternzeugnis.
+Danke für dein Interesse an Elternzeugnis.
 
-## Grundsaetze
+## Grundsätze
 
-- Veraenderungen sollen Kindern helfen, Gefuehle und Wuensche freundlich auszudruecken.
+- Veränderungen sollen Kindern helfen, Gefühle und Wünsche freundlich auszudrücken.
 - Die App soll einfach, barrierearm und auf Tablets gut bedienbar bleiben.
-- Neue Funktionen sollen ohne Tracking und ohne unnoetige Datensammlung auskommen.
-- Formulierungen sollen wertschaetzend, kindgerecht und nicht beschuldigend sein.
+- Neue Funktionen sollen ohne Tracking und ohne unnötige Datensammlung auskommen.
+- Formulierungen sollen wertschätzend, kindgerecht und nicht beschuldigend sein.
 
 ## Entwicklung
 
@@ -16,7 +16,7 @@ npm install
 npm run dev
 ```
 
-Vor groesseren Aenderungen bitte ausfuehren:
+Vor größeren Änderungen bitte ausführen:
 
 ```bash
 npm run build
@@ -27,7 +27,7 @@ npm run lint
 
 Bitte beschreibe:
 
-- Was wurde geaendert?
+- Was wurde geändert?
 - Warum ist die Aenderung hilfreich?
-- Wurde die Bedienung auf kleinen Bildschirmen geprueft?
+- Wurde die Bedienung auf kleinen Bildschirmen geprüft?
 - Gibt es Auswirkungen auf Datenschutz oder rechtliche Texte?

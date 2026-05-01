@@ -101,12 +101,12 @@ function reminderMail(reminder) {
   const child = reminder.childName || "ein Kind";
   const recipient = reminder.recipientName || "die Eltern";
   return {
-    subject: `Erinnerung: ${child} kann ein Elternzeugnis ausfuellen`,
+    subject: `Erinnerung: ${child} kann ein Elternzeugnis ausfüllen`,
     text:
-      `Hallo,\n\nheute ist ein guter Zeitpunkt, damit ${child} ein Elternzeugnis fuer ${recipient} ausfuellt.\n\n` +
-      "Paedagogischer Gedanke: Erst Staerken sehen, dann Wuensche freundlich formulieren. Eine schlechte Note ist ein Gespraechsanlass, kein Urteil.\n\n" +
-      `App oeffnen: ${process.env.APP_URL || "http://127.0.0.1:5173"}\n\n` +
-      "Viele Gruesse\nElternzeugnis",
+      `Hallo,\n\nheute ist ein guter Zeitpunkt, damit ${child} ein Elternzeugnis für ${recipient} ausfüllt.\n\n` +
+      "Pädagogischer Gedanke: Erst Stärken sehen, dann Wünsche freundlich formulieren. Eine schlechte Note ist ein Gesprächsanlass, kein Urteil.\n\n" +
+      `App öffnen: ${process.env.APP_URL || "http://127.0.0.1:5173"}\n\n` +
+      "Viele Grüße\nElternzeugnis",
   };
 }
 

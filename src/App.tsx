@@ -106,47 +106,47 @@ const categories: Category[] = [
     id: "geduld",
     title: "Geduld",
     childHint: "Bleibt ruhig, wenn etwas nicht sofort klappt?",
-    advice: "Ein Familien-Codewort fuer kurze Pausen kann helfen.",
+    advice: "Ein Familien-Codewort für kurze Pausen kann helfen.",
   },
   {
     id: "zuhoren",
-    title: "Zuhoeren",
-    childHint: "Hoert zu, ohne sofort zu schimpfen oder abzulenken?",
+    title: "Zuhören",
+    childHint: "Hört zu, ohne sofort zu schimpfen oder abzulenken?",
     advice: "Zehn Minuten Redezeit ohne Handy sind ein guter Anfang.",
   },
   {
     id: "spielzeit",
     title: "Spielzeit",
-    childHint: "Nimmt sich Zeit fuer Spiel, Vorlesen oder Quatsch?",
+    childHint: "Nimmt sich Zeit für Spiel, Vorlesen oder Quatsch?",
     advice: "Lieber kurz und wirklich gemeinsam als lang und halb dabei.",
   },
   {
     id: "trosten",
-    title: "Troesten",
-    childHint: "Ist da, wenn du traurig, wuetend oder unsicher bist?",
+    title: "Trösten",
+    childHint: "Ist da, wenn du traurig, wütend oder unsicher bist?",
     advice: "Erst fragen: Brauchst du Trost, Hilfe oder Ruhe?",
   },
   {
     id: "lernen",
     title: "Lernhilfe",
-    childHint: "Erklaert ohne Druck und macht Mut?",
-    advice: "Fehler zeigen nur, was als Naechstes geuebt wird.",
+    childHint: "Erklärt ohne Druck und macht Mut?",
+    advice: "Fehler zeigen nur, was als Nächstes geübt wird.",
   },
   {
     id: "fairness",
     title: "Fairness",
-    childHint: "Sind Regeln verstaendlich und moeglichst gerecht?",
+    childHint: "Sind Regeln verständlich und möglichst gerecht?",
     advice: "Regeln gemeinsam besprechen und sichtbar aufschreiben.",
   },
   {
     id: "abenteuer",
     title: "Abenteuer",
-    childHint: "Gibt es Ausfluege, Bewegung und gemeinsame Erlebnisse?",
-    advice: "Ein Ideen-Glas macht kleine gemeinsame Plaene leichter.",
+    childHint: "Gibt es Ausflüge, Bewegung und gemeinsame Erlebnisse?",
+    advice: "Ein Ideen-Glas macht kleine gemeinsame Pläne leichter.",
   },
   {
     id: "versoehnen",
-    title: "Versoehnen",
+    title: "Versöhnen",
     childHint: "Kann sich entschuldigen und wieder freundlich werden?",
     advice: "Nach Streit hilft: Ich mag dich, wir versuchen es nochmal.",
   },
@@ -317,10 +317,10 @@ function Dashboard({ data, setView }: { data: AppData; setView: (view: View) => 
   return (
     <section className="dashboard">
       <div className="dashboard-hero">
-        <p className="eyebrow">Lokale Familien-App</p>
-        <h1>Ein kleines Ritual fuer mehr Verbindung</h1>
+        <p className="eyebrow">Familien-App</p>
+        <h1>Ein kleines Ritual für mehr Verbindung</h1>
         <p>
-          Kinder fuellen ein Elternzeugnis aus, Eltern sehen Entwicklung ueber die Jahre und
+          Kinder füllen ein Elternzeugnis aus, Eltern sehen Entwicklung über die Jahre und
           Erinnerungen helfen, das Ritual nicht zu vergessen.
         </p>
         <div className="hero-actions">
@@ -337,7 +337,7 @@ function Dashboard({ data, setView }: { data: AppData; setView: (view: View) => 
         <button className="dashboard-card" onClick={() => setView("child")}>
           <Pencil size={25} />
           <strong>Neues Zeugnis</strong>
-          <span>Grosse Buttons, wenig Ablenkung.</span>
+          <span>Große Buttons, wenig Ablenkung.</span>
         </button>
         <button className="dashboard-card" onClick={() => setView(draftHasText ? "certificate" : "people")}>
           <FileText size={25} />
@@ -415,7 +415,7 @@ function ChildModeScreen({
         {data.draft.grades[category.id] >= 5 ? <WishChips category={category} setData={setData} /> : null}
         <div className="hero-actions">
           <button className="secondary-button" onClick={previous} disabled={focusIndex === 0}>
-            Zurueck
+            Zurück
           </button>
           {focusIndex === categories.length - 1 ? (
             <button className="primary-button" onClick={() => setView("certificate")}>
@@ -433,7 +433,7 @@ function ChildModeScreen({
 }
 
 function gradeCopy(grade: number) {
-  return ["", "Super", "Gut", "Okay", "Ueben", "Mehr Hilfe", "Reden"][grade];
+  return ["", "Super", "Gut", "Okay", "Üben", "Mehr Hilfe", "Reden"][grade];
 }
 
 function WishChips({
@@ -444,9 +444,9 @@ function WishChips({
   setData: Dispatch<SetStateAction<AppData>>;
 }) {
   const wishes = [
-    `Ich wuensche mir bei ${category.title.toLowerCase()} mehr Zeit.`,
+    `Ich wünsche mir bei ${category.title.toLowerCase()} mehr Zeit.`,
     `Bitte frag mich, was ich brauche.`,
-    `Lass uns dafuer eine kleine Abmachung machen.`,
+    `Lass uns dafür eine kleine Abmachung machen.`,
   ];
 
   const addWish = (wish: string) => {
@@ -604,7 +604,7 @@ function CertificateScreen({
             Familienzeugnis
           </div>
           <p>Schuljahr {data.draft.year || "____ / ____"}</p>
-          <h2>Zeugnis fuer {parent?.name || "____________"}</h2>
+          <h2>Zeugnis für {parent?.name || "____________"}</h2>
           <span>ausgestellt von {child?.name || "____________"}</span>
         </header>
 
@@ -615,7 +615,7 @@ function CertificateScreen({
                 <strong>{category.title}</strong>
                 <small>{category.childHint}</small>
               </div>
-              <div className="grade-picker" aria-label={`Note fuer ${category.title}`}>
+              <div className="grade-picker" aria-label={`Note für ${category.title}`}>
                 {[1, 2, 3, 4, 5, 6].map((grade) => (
                   <button
                     key={grade}
@@ -644,11 +644,11 @@ function CertificateScreen({
             <textarea value={data.draft.strengths} onChange={(event) => updateDraft("strengths", event.target.value)} />
           </label>
           <label>
-            Das wuensche ich mir noch
+            Das wünsche ich mir noch
             <textarea value={data.draft.wishes} onChange={(event) => updateDraft("wishes", event.target.value)} />
           </label>
           <label>
-            Mein schoenster Moment
+            Mein schönster Moment
             <textarea
               value={data.draft.favoriteMoment}
               onChange={(event) => updateDraft("favoriteMoment", event.target.value)}
@@ -701,10 +701,10 @@ function PeopleScreen({
       <section className="panel wide-panel setup-panel">
         <div>
           <p className="eyebrow">Vorbereitung</p>
-          <h1>Stammdaten fuer das Familienritual</h1>
+          <h1>Stammdaten für das Familienritual</h1>
           <p>
             Lege hier Kinder, Eltern und E-Mail-Adressen an. Danach ist der Kindermodus einfacher,
-            weil Kinder nur noch auswaehlen und bewerten muessen.
+            weil Kinder nur noch auswählen und bewerten müssen.
           </p>
         </div>
       </section>
@@ -765,7 +765,7 @@ function DataTools({
     <section className="panel">
       <div className="panel-title">
         <Upload size={24} />
-        <h1>Lokale Datensicherung</h1>
+        <h1>Datensicherung</h1>
       </div>
       <p className="empty-state">
         Exportiere Stammdaten, Entwurf und Verlauf als JSON-Datei oder lies eine Sicherung wieder ein.
@@ -815,7 +815,7 @@ function PersonList({
             </label>
             {showEmail ? (
               <label>
-                E-Mail fuer Erinnerungen
+                E-Mail für Erinnerungen
                 <input
                   type="email"
                   value={person.email || ""}
@@ -830,7 +830,7 @@ function PersonList({
         ))}
       </div>
       <button className="secondary-button" onClick={onAdd}>
-        <Plus size={19} /> Hinzufuegen
+        <Plus size={19} /> Hinzufügen
       </button>
     </section>
   );
@@ -922,7 +922,7 @@ function HistoryScreen({
           .map((certificate) => (
             <article className="timeline-item" key={certificate.id}>
               <strong>
-                {certificate.year}: {certificate.child} fuer {certificate.parent}
+                {certificate.year}: {certificate.child} für {certificate.parent}
               </strong>
               <span>Durchschnitt {certificate.average}</span>
               <p>{certificate.favoriteMoment || certificate.strengths || "Kein Freitext eingetragen."}</p>
@@ -930,7 +930,7 @@ function HistoryScreen({
                 <button className="secondary-button" onClick={() => editCertificate(certificate)}>
                   Bearbeiten
                 </button>
-                <button className="icon-button" onClick={() => deleteCertificate(certificate.id)} aria-label="Zeugnis loeschen">
+                <button className="icon-button" onClick={() => deleteCertificate(certificate.id)} aria-label="Zeugnis löschen">
                   <Trash2 size={18} />
                 </button>
               </div>
@@ -1059,8 +1059,8 @@ function ReminderScreen({ data }: { data: AppData }) {
         <div className={smtpReady ? "status ok" : "status warn"}>
           <Mail size={18} />
           {smtpReady
-            ? "SMTP ist gespeichert. Erinnerungen und Testmails koennen versendet werden."
-            : "SMTP ist noch nicht vollstaendig. Trage Host, Benutzer und Passwort ein."}
+            ? "SMTP ist gespeichert. Erinnerungen und Testmails können versendet werden."
+            : "SMTP ist noch nicht vollständig. Trage Host, Benutzer und Passwort ein."}
         </div>
         <div className="form-grid">
           <label>
@@ -1168,7 +1168,7 @@ function ReminderScreen({ data }: { data: AppData }) {
             >
               <option value="once">einmalig</option>
               <option value="monthly">monatlich</option>
-              <option value="yearly">jaehrlich</option>
+              <option value="yearly">jährlich</option>
             </select>
           </label>
         </div>
@@ -1189,7 +1189,7 @@ function ReminderScreen({ data }: { data: AppData }) {
               <article className="reminder-row" key={reminder.id}>
                 <div>
                   <strong>
-                    {reminder.childName} fuer {reminder.recipientName}
+                    {reminder.childName} für {reminder.recipientName}
                   </strong>
                   <span>
                     {reminder.date} um {reminder.time}, {reminder.frequency}
@@ -1223,7 +1223,6 @@ function Footer() {
           <Github size={18} /> GitHub
         </a>
       </div>
-      <small>Lokale App ohne Cloud-Speicherung und ohne Rechtsdokumente.</small>
       <span title={`Branch ${appBranch}, Build ${appBuildTime}`}>Rev. {appVersion}-{appRevision}</span>
     </footer>
   );
