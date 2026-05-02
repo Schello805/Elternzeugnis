@@ -71,14 +71,20 @@ async function initDatabase() {
 }
 
 const defaultGrades = {
-  geduld: 2,
-  zuhoren: 2,
   spielzeit: 2,
-  trosten: 2,
+  kuschelfaktor: 2,
+  kochkuenste: 2,
+  fahrdienst: 2,
+  geduld: 2,
+  freundlichkeit: 2,
+  taschengeld: 2,
+  familienausfluege: 2,
+  urlaubszeit: 2,
+  partyvorbereitung: 2,
+  coolness: 2,
   lernen: 2,
-  fairness: 2,
-  abenteuer: 2,
-  versoehnen: 2,
+  klamottenberatung: 2,
+  probleme_reden: 2,
 };
 
 function calendarYear(value, date = new Date().toISOString().slice(0, 10)) {

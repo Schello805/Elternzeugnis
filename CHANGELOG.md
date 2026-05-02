@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.17
+
+- Bewertungsbereiche an die Vorlage aus dem Foto angepasst
+- Kategorien Spielzeit, Kuschelfaktor, Kochkünste, Fahrdienst, Geduld, Freundlichkeit und Taschengeld ergänzt
+- Kategorien Familienausflüge, Urlaubszeit, Partyvorbereitung, Coolness, Hilfe beim Lernen, Beratung beim Klamottenkauf und Reden über Probleme ergänzt
+- Pädagogische Hinweise für die neuen Kategorien ergänzt
+- Versionsnummer erhöht
+
 ## 0.1.16
 
 - Button „Einrichtung als erledigt markieren“ mit sichtbarer Rückmeldung ergänzt
