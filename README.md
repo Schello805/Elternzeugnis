@@ -186,9 +186,14 @@ Für E-Mail-Erinnerungen speichert der API-Server Erinnerungsdaten in `data/remi
 
 Das Installations- und Update-Skript sichert den kompletten Ordner `data/`, also auch `elternzeugnis.sqlite`, `reminders.json` und Backups. Zusätzlich legt der Server täglich ein Backup unter `data/backups/` an. Über die Adminseite kann jederzeit manuell ein Backup erstellt werden.
 
-## Repository
+## Screenshots
 
-GitHub: <https://github.com/Schello805/Elternzeugnis>
+
+<img width="1713" height="651" alt="Bildschirmfoto 2026-05-02 um 11 52 45" src="https://github.com/user-attachments/assets/6994b018-41c4-4806-a7ff-afe423d847e7" />
+
+
+<img width="1711" height="737" alt="Bildschirmfoto 2026-05-02 um 11 53 03" src="https://github.com/user-attachments/assets/cfdd71e4-6400-4b77-a1fe-21a4a2780618" />
+
 
 ## Lizenz
 
