@@ -1095,16 +1095,27 @@ function PeopleScreen({
   data: AppData;
   setData: Dispatch<SetStateAction<AppData>>;
 }) {
+  const [setupMessage, setSetupMessage] = useState("");
+  const setupComplete =
+    data.children.length > 0 &&
+    data.parents.length > 0 &&
+    data.children.every((person) => person.name.trim() && person.name !== "Kind" && person.birthDate) &&
+    data.parents.every((person) => person.name.trim() && person.name !== "Elternteil");
+
   const updatePerson = (group: "children" | "parents", id: string, patch: Partial<Person>) => {
+    setSetupMessage("");
     setData((current) => ({
       ...current,
+      meta: { ...current.meta, setupComplete: false },
       [group]: current[group].map((person) => (person.id === id ? { ...person, ...patch } : person)),
     }));
   };
 
   const addPerson = (group: "children" | "parents") => {
+    setSetupMessage("");
     setData((current) => ({
       ...current,
+      meta: { ...current.meta, setupComplete: false },
       [group]: [
         ...current[group],
         { id: newId(), name: group === "children" ? "Neues Kind" : "Elternteil", email: "", birthDate: "" },
@@ -1113,17 +1124,32 @@ function PeopleScreen({
   };
 
   const removePerson = (group: "children" | "parents", id: string) => {
+    setSetupMessage("");
     setData((current) => ({
       ...current,
+      meta: { ...current.meta, setupComplete: false },
       [group]: current[group].filter((person) => person.id !== id),
     }));
   };
 
   const completeSetup = () => {
+    const missing: string[] = [];
+    if (!data.children.length) missing.push("mindestens ein Kind");
+    if (data.children.some((person) => !person.name.trim() || person.name === "Kind")) missing.push("richtige Kindernamen");
+    if (data.children.some((person) => !person.birthDate)) missing.push("Geburtsdatum für jedes Kind");
+    if (!data.parents.length) missing.push("mindestens eine Bezugsperson");
+    if (data.parents.some((person) => !person.name.trim() || person.name === "Elternteil")) missing.push("Namen der Bezugspersonen");
+
+    if (missing.length) {
+      setSetupMessage(`Bitte ergänzen: ${missing.join(", ")}.`);
+      return;
+    }
+
     setData((current) => ({
       ...current,
       meta: { ...current.meta, setupComplete: true },
     }));
+    setSetupMessage("Einrichtung gespeichert. Die altersgerechten Texte sind jetzt aktiv.");
   };
 
   return (
@@ -1136,9 +1162,14 @@ function PeopleScreen({
             Bereite die Namen vor, damit Kinder später ohne technische Hürden erzählen können,
             was sie stärkt, was sie brauchen und worüber sie gerne sprechen möchten.
           </p>
-          <button className="primary-button" onClick={completeSetup}>
-            <CheckCircle2 size={19} /> Einrichtung als erledigt markieren
+          <button className="primary-button" onClick={completeSetup} disabled={data.meta?.setupComplete && setupComplete}>
+            <CheckCircle2 size={19} /> {data.meta?.setupComplete && setupComplete ? "Einrichtung erledigt" : "Einrichtung als erledigt markieren"}
           </button>
+          {setupMessage ? (
+            <p className={setupComplete ? "success-message" : "status warn"}>{setupMessage}</p>
+          ) : data.meta?.setupComplete && setupComplete ? (
+            <p className="success-message">Einrichtung ist vollständig.</p>
+          ) : null}
         </div>
       </section>
       <PersonList

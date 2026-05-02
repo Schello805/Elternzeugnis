@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.16
+
+- Button „Einrichtung als erledigt markieren“ mit sichtbarer Rückmeldung ergänzt
+- Stammdaten werden vor Abschluss der Einrichtung geprüft
+- Fehlende Kindernamen, Geburtsdaten und Bezugspersonen werden konkret benannt
+- Einrichtung wird bei späteren Stammdatenänderungen wieder als offen markiert
+- Versionsnummer erhöht
+
 ## 0.1.15
 
 - Update-Skript entquotet Werte aus `.env`
