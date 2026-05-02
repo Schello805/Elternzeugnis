@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.15
+
+- Update-Skript entquotet Werte aus `.env`
+- Portprüfung ergänzt, damit `curl` keine ungültige URL mit Anführungszeichen erhält
+- `PORT` wird beim Update normalisiert zurück in `.env` geschrieben
+- Versionsnummer erhöht
+
 ## 0.1.14
 
 - Design-Auswahl von Farbstreifen auf Mini-PDF-Vorschauen umgestellt

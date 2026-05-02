@@ -77,7 +77,7 @@ update_code() {
 env_value() {
   local key="$1"
   if [[ -f "${APP_DIR}/.env" ]]; then
-    sed -n "s/^${key}=//p" "${APP_DIR}/.env" | tail -n 1
+    sed -n "s/^${key}=//p" "${APP_DIR}/.env" | tail -n 1 | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//"
   fi
 }
 
@@ -101,6 +101,13 @@ default_public_url() {
   fi
 }
 
+validate_port() {
+  local value="$1"
+  if [[ ! "${value}" =~ ^[0-9]+$ ]] || (( value < 1 || value > 65535 )); then
+    fail "Ungültiger Port in .env: ${value}. Bitte PORT=4147 setzen."
+  fi
+}
+
 ensure_runtime_env() {
   log "Laufzeitkonfiguration prüfen"
   [[ -f "${APP_DIR}/.env" ]] || cp "${APP_DIR}/.env.example" "${APP_DIR}/.env"
@@ -118,6 +125,8 @@ ensure_runtime_env() {
   else
     APP_PORT="${current_port}"
   fi
+  validate_port "${APP_PORT}"
+  set_env_value PORT "${APP_PORT}"
 
   local current_url
   current_url="$(env_value APP_URL)"
