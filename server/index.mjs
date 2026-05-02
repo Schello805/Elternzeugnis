@@ -10,7 +10,8 @@ import crypto from "node:crypto";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const packageFile = resolve(root, "package.json");
-const dataFile = resolve(root, "data/reminders.json");
+const appDataFile = resolve(root, "data/app-data.json");
+const remindersFile = resolve(root, "data/reminders.json");
 const envFile = resolve(root, ".env");
 const distDir = resolve(root, "dist");
 const indexFile = resolve(distDir, "index.html");
@@ -40,6 +41,78 @@ function smtpConfigured() {
 
 function validEmail(email) {
   return typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+const defaultGrades = {
+  geduld: 2,
+  zuhoren: 2,
+  spielzeit: 2,
+  trosten: 2,
+  lernen: 2,
+  fairness: 2,
+  abenteuer: 2,
+  versoehnen: 2,
+};
+
+function newCertificate(childId = "child-1", parentId = "parent-1") {
+  return {
+    id: crypto.randomUUID(),
+    childId,
+    parentId,
+    year: "2025/2026",
+    date: new Date().toISOString().slice(0, 10),
+    grades: { ...defaultGrades },
+    strengths: "",
+    wishes: "",
+    favoriteMoment: "",
+    signature: "",
+    design: "classic",
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function initialAppData() {
+  return {
+    children: [{ id: "child-1", name: "Kind" }],
+    parents: [
+      { id: "parent-1", name: "Mama", email: "" },
+      { id: "parent-2", name: "Papa", email: "" },
+    ],
+    draft: newCertificate(),
+    certificates: [],
+  };
+}
+
+function normalizeAppData(value) {
+  const initial = initialAppData();
+  const data = value && typeof value === "object" ? value : {};
+  const draft = data.draft && typeof data.draft === "object" ? data.draft : initial.draft;
+  return {
+    children: Array.isArray(data.children) && data.children.length ? data.children : initial.children,
+    parents: Array.isArray(data.parents) && data.parents.length ? data.parents : initial.parents,
+    draft: {
+      ...initial.draft,
+      ...draft,
+      grades: { ...defaultGrades, ...(draft.grades || {}) },
+      design: ["classic", "rainbow", "forest", "space"].includes(draft.design) ? draft.design : "classic",
+    },
+    certificates: Array.isArray(data.certificates) ? data.certificates : [],
+  };
+}
+
+async function readAppData() {
+  try {
+    return normalizeAppData(JSON.parse(await readFile(appDataFile, "utf8")));
+  } catch {
+    return initialAppData();
+  }
+}
+
+async function writeAppData(data) {
+  const normalized = normalizeAppData(data);
+  await mkdir(dirname(appDataFile), { recursive: true });
+  await writeFile(appDataFile, JSON.stringify(normalized, null, 2));
+  return normalized;
 }
 
 function smtpConfig() {
@@ -90,15 +163,15 @@ function createTransport() {
 
 async function readReminders() {
   try {
-    return JSON.parse(await readFile(dataFile, "utf8"));
+    return JSON.parse(await readFile(remindersFile, "utf8"));
   } catch {
     return [];
   }
 }
 
 async function writeReminders(reminders) {
-  await mkdir(dirname(dataFile), { recursive: true });
-  await writeFile(dataFile, JSON.stringify(reminders, null, 2));
+  await mkdir(dirname(remindersFile), { recursive: true });
+  await writeFile(remindersFile, JSON.stringify(reminders, null, 2));
 }
 
 function nextDueDate(reminder, from = new Date()) {
@@ -189,9 +262,18 @@ app.get("/api/health", (_request, response) => {
     host,
     port,
     distAvailable: existsSync(indexFile),
+    appDataAvailable: existsSync(appDataFile),
     smtpConfigured: smtpConfigured(),
     time: new Date().toISOString(),
   });
+});
+
+app.get("/api/app-data", async (_request, response) => {
+  response.json(await readAppData());
+});
+
+app.put("/api/app-data", async (request, response) => {
+  response.json(await writeAppData(request.body || {}));
 });
 
 app.get("/api/smtp/config", (_request, response) => {

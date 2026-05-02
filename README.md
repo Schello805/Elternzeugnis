@@ -18,6 +18,7 @@ Der pädagogische Kern ist ein Gespräch auf Augenhöhe. Ein Elternzeugnis soll 
 - beziehungsorientierte Fragen statt reiner Leistungsbewertung
 - Stammdaten für Kinder, Eltern und Bezugspersonen
 - Verlauf über gespeicherte Zeugnisse pro Jahr
+- zentrale Speicherung auf dem lokalen Server für Smartphone, Tablet und Desktop
 - grafische Auswertungen mit Durchschnitt und Kategorien
 - geführte Leerzustände und Erfolgsmeldungen
 - pädagogische Wunschbausteine bei schwierigen Bewertungen
@@ -166,9 +167,17 @@ Beim Starten und Bauen wird automatisch `src/generated/version.ts` aktualisiert.
 
 ## Daten
 
-Die App speichert Eingaben im Browser des verwendeten Geräts. Es werden keine Tracking-Dienste verwendet.
+Die App speichert Stammdaten, Entwurf und Zeugnisverlauf zentral auf dem lokalen Server in:
+
+```text
+data/app-data.json
+```
+
+Dadurch sehen Smartphone, Tablet und Desktop denselben Datenstand, solange sie dieselbe lokale Installation aufrufen. Geöffnete Geräte laden Änderungen beim Zurückwechseln in den Tab und regelmäßig im Hintergrund nach. Zusätzlich legt der Browser weiterhin ein lokales Backup im `localStorage` an. Wenn der Server beim ersten Start noch leer ist und auf einem Gerät bereits ältere lokale Daten vorhanden sind, übernimmt die App diese Daten automatisch in die zentrale Ablage.
 
 Für E-Mail-Erinnerungen speichert der API-Server Erinnerungsdaten in `data/reminders.json`. SMTP-Zugangsdaten liegen in der `.env` Datei. Die SMTP-Konfiguration kann über die Oberfläche gepflegt werden.
+
+Das Installations- und Update-Skript sichert den kompletten Ordner `data/`, also auch `app-data.json` und `reminders.json`.
 
 ## Repository
 

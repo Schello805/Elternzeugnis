@@ -138,6 +138,35 @@ a:focus-visible {
   text-decoration: none;
 }
 
+.sync-badge {
+  border: 1px solid #d8cdb9;
+  border-radius: 999px;
+  color: #44524d;
+  font-size: 0.82rem;
+  font-weight: 850;
+  padding: 7px 10px;
+  white-space: nowrap;
+}
+
+.sync-badge.synchronisiert {
+  background: #edf6f2;
+  border-color: #bcd8cd;
+  color: #24594c;
+}
+
+.sync-badge.speichert,
+.sync-badge.lade {
+  background: #fff7df;
+  border-color: #e3c17c;
+  color: #68450e;
+}
+
+.sync-badge.offline {
+  background: #fff1ed;
+  border-color: #e0a08f;
+  color: #8b3527;
+}
+
 main {
   flex: 1;
 }

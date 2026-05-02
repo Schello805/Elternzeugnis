@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.12
+
+- Zentrale serverseitige Speicherung für Stammdaten, Entwurf und Zeugnisverlauf ergänzt
+- Neue API-Endpunkte `/api/app-data` zum Laden und Speichern der App-Daten ergänzt
+- Frontend synchronisiert Änderungen automatisch mit `data/app-data.json`
+- Bestehende Browserdaten werden beim ersten Start in die zentrale Ablage übernommen, wenn der Server noch leer ist
+- Andere geöffnete Geräte laden Serveränderungen bei Fokus und regelmäßig im Hintergrund nach
+- Synchronisationsstatus im Header ergänzt
+- README zur neuen gemeinsamen Datenspeicherung aktualisiert
+- Versionsnummer erhöht
+
 ## 0.1.11
 
 - Browser-Fallback für Geräte ohne `crypto.randomUUID()` ergänzt

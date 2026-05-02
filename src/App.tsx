@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, ReactElement, ReactNode, SetStateAction } from "react";
 import {
   Bar,
@@ -100,6 +100,8 @@ type SmtpConfig = {
   appUrl: string;
   configured?: boolean;
 };
+
+type SyncState = "lade" | "synchronisiert" | "speichert" | "offline";
 
 const categories: Category[] = [
   {
@@ -222,35 +224,165 @@ function designSubtitle(design: Design) {
   return subtitles[design];
 }
 
-function loadData(): AppData {
+function normalizeData(value: Partial<AppData> | null | undefined): AppData {
+  const parsed = value || {};
+  const draft = parsed.draft ? { ...newCertificate(), ...parsed.draft } : initialData.draft;
+  return {
+    ...initialData,
+    ...parsed,
+    children: parsed.children?.length ? parsed.children : initialData.children,
+    parents: parsed.parents?.length ? parsed.parents : initialData.parents,
+    draft: { ...draft, grades: { ...defaultGrades, ...draft.grades }, design: draft.design || "classic" },
+    certificates: parsed.certificates || [],
+  };
+}
+
+function loadLocalData(): AppData {
   try {
     const raw = localStorage.getItem(storageKey);
-    if (!raw) return initialData;
+    if (!raw) return normalizeData(initialData);
     const parsed = JSON.parse(raw) as Partial<AppData>;
-    return {
-      ...initialData,
-      ...parsed,
-      children: parsed.children?.length ? parsed.children : initialData.children,
-      parents: parsed.parents?.length ? parsed.parents : initialData.parents,
-      draft: parsed.draft ? { ...newCertificate(), ...parsed.draft } : initialData.draft,
-      certificates: parsed.certificates || [],
-    };
+    return normalizeData(parsed);
   } catch {
-    return initialData;
+    return normalizeData(initialData);
   }
 }
 
+function hasUserData(data: AppData) {
+  return (
+    data.certificates.length > 0 ||
+    data.children.some((person) => person.name !== "Kind") ||
+    data.parents.some((person) => person.name !== "Mama" && person.name !== "Papa") ||
+    Boolean(data.draft.strengths || data.draft.wishes || data.draft.favoriteMoment || data.draft.signature)
+  );
+}
+
+function isInitialServerData(data: AppData) {
+  return (
+    data.certificates.length === 0 &&
+    data.children.length === 1 &&
+    data.children[0]?.name === "Kind" &&
+    data.parents.length === 2 &&
+    data.parents[0]?.name === "Mama" &&
+    data.parents[1]?.name === "Papa" &&
+    !data.draft.strengths &&
+    !data.draft.wishes &&
+    !data.draft.favoriteMoment &&
+    !data.draft.signature
+  );
+}
+
+async function saveAppData(data: AppData) {
+  const response = await fetch("/api/app-data", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Daten konnten nicht gespeichert werden.");
+  return normalizeData((await response.json()) as Partial<AppData>);
+}
+
 export function App() {
-  const [data, setData] = useState<AppData>(loadData);
+  const [data, setData] = useState<AppData>(loadLocalData);
   const [view, setView] = useState<View>("home");
+  const [serverLoaded, setServerLoaded] = useState(false);
+  const [syncState, setSyncState] = useState<SyncState>("lade");
+  const dataRef = useRef(data);
+  const lastChangeAt = useRef(Date.now());
+
+  useEffect(() => {
+    dataRef.current = data;
+    lastChangeAt.current = Date.now();
+  }, [data]);
+
+  useEffect(() => {
+    let active = true;
+    const localData = loadLocalData();
+
+    fetch("/api/app-data")
+      .then((response) => {
+        if (!response.ok) throw new Error("Serverdaten konnten nicht geladen werden.");
+        return response.json() as Promise<Partial<AppData>>;
+      })
+      .then(async (serverData) => {
+        if (!active) return;
+        const normalizedServerData = normalizeData(serverData);
+        if (isInitialServerData(normalizedServerData) && hasUserData(localData)) {
+          const migratedData = await saveAppData(localData);
+          if (!active) return;
+          setData(migratedData);
+        } else {
+          setData(normalizedServerData);
+          localStorage.setItem(storageKey, JSON.stringify(normalizedServerData));
+        }
+        setSyncState("synchronisiert");
+      })
+      .catch(() => {
+        if (!active) return;
+        setSyncState("offline");
+      })
+      .finally(() => {
+        if (active) setServerLoaded(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(data));
-  }, [data]);
+    if (!serverLoaded) return;
+    const timeout = window.setTimeout(() => {
+      setSyncState("speichert");
+      saveAppData(data)
+        .then((savedData) => {
+          localStorage.setItem(storageKey, JSON.stringify(savedData));
+          setSyncState("synchronisiert");
+        })
+        .catch(() => setSyncState("offline"));
+    }, 700);
+
+    return () => window.clearTimeout(timeout);
+  }, [data, serverLoaded]);
+
+  useEffect(() => {
+    if (!serverLoaded) return;
+
+    const refreshFromServer = async () => {
+      if (Date.now() - lastChangeAt.current < 2500) return;
+      try {
+        const response = await fetch("/api/app-data");
+        if (!response.ok) throw new Error("Serverdaten konnten nicht geladen werden.");
+        const serverData = normalizeData((await response.json()) as Partial<AppData>);
+        if (JSON.stringify(serverData) !== JSON.stringify(dataRef.current)) {
+          setData(serverData);
+          localStorage.setItem(storageKey, JSON.stringify(serverData));
+        }
+        setSyncState("synchronisiert");
+      } catch {
+        setSyncState("offline");
+      }
+    };
+
+    const refreshOnVisible = () => {
+      if (document.visibilityState === "visible") void refreshFromServer();
+    };
+
+    const interval = window.setInterval(refreshFromServer, 15000);
+    window.addEventListener("focus", refreshFromServer);
+    document.addEventListener("visibilitychange", refreshOnVisible);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshFromServer);
+      document.removeEventListener("visibilitychange", refreshOnVisible);
+    };
+  }, [serverLoaded]);
 
   return (
     <div className="app-shell">
-      <Header view={view} setView={setView} />
+      <Header view={view} setView={setView} syncState={syncState} />
       <main>
         <AppWorkspace data={data} setData={setData} view={view} setView={setView} />
       </main>
@@ -259,7 +391,14 @@ export function App() {
   );
 }
 
-function Header({ view, setView }: { view: View; setView: (view: View) => void }) {
+function Header({ view, setView, syncState }: { view: View; setView: (view: View) => void; syncState: SyncState }) {
+  const syncText: Record<SyncState, string> = {
+    lade: "Lade Serverdaten",
+    synchronisiert: "Zentral gespeichert",
+    speichert: "Speichert",
+    offline: "Nur lokal gespeichert",
+  };
+
   return (
     <header className="topbar">
       <div className="topbar-brand-row">
@@ -273,6 +412,7 @@ function Header({ view, setView }: { view: View; setView: (view: View) => void }
           </span>
         </div>
         <nav className="topnav" aria-label="Projekt">
+          <span className={`sync-badge ${syncState}`}>{syncText[syncState]}</span>
           <a href={githubUrl} target="_blank" rel="noreferrer">
             <Github size={18} /> GitHub
           </a>
@@ -857,14 +997,7 @@ function DataTools({
   const importData = async (file: File | undefined) => {
     if (!file) return;
     const parsed = JSON.parse(await file.text()) as AppData;
-    setData({
-      ...initialData,
-      ...parsed,
-      children: parsed.children?.length ? parsed.children : initialData.children,
-      parents: parsed.parents?.length ? parsed.parents : initialData.parents,
-      draft: parsed.draft || newCertificate(),
-      certificates: parsed.certificates || [],
-    });
+    setData(normalizeData(parsed));
   };
 
   return (
