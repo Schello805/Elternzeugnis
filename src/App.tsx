@@ -314,6 +314,31 @@ function designSubtitle(design: Design) {
   return subtitles[design];
 }
 
+function DesignPreview({ design }: { design: Design }) {
+  return (
+    <span className={`design-preview-sheet ${design}`} aria-hidden="true">
+      <span className="preview-page">
+        <span className="preview-head">
+          <i />
+          <strong />
+          <em />
+        </span>
+        <span className="preview-grades">
+          <b />
+          <b />
+          <b />
+          <b />
+        </span>
+        <span className="preview-text">
+          <i />
+          <i />
+        </span>
+        <span className="preview-signature" />
+      </span>
+    </span>
+  );
+}
+
 function normalizeData(value: Partial<AppData> | null | undefined): AppData {
   const parsed = value || {};
   const draft = parsed.draft ? { ...newCertificate(), ...parsed.draft } : initialData.draft;
@@ -760,10 +785,7 @@ function ChildModeScreen({
                 onClick={() => updateDraft("design", design)}
                 type="button"
               >
-                <span className={`design-preview ${design}`}>
-                  <span />
-                  <i />
-                </span>
+                <DesignPreview design={design} />
                 {designLabel(design)}
               </button>
             ))}
@@ -969,10 +991,7 @@ function CertificateScreen({
               onClick={() => updateDraft("design", design)}
               type="button"
             >
-              <span className={`design-preview ${design}`}>
-                <span />
-                <i />
-              </span>
+              <DesignPreview design={design} />
               {designLabel(design)}
             </button>
           ))}

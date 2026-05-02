@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.14
+
+- Design-Auswahl von Farbstreifen auf Mini-PDF-Vorschauen umgestellt
+- Vorschauen zeigen Kopfbereich, Notenfelder, Textflächen und Signaturbereich
+- Vorschauen unterscheiden Urkundenstil, Stickerbogen, Naturtagebuch und Sternenmission deutlicher
+- Versionsnummer erhöht
+
 ## 0.1.13
 
 - Zeugnisjahr auf Kalenderjahr umgestellt
