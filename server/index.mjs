@@ -35,7 +35,7 @@ function appVersion() {
   }
 }
 
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "4mb" }));
 
 if (existsSync(distDir)) {
   app.use(express.static(distDir));

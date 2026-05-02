@@ -25,7 +25,7 @@ import {
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Dispatch, ReactElement, ReactNode, SetStateAction } from "react";
+import type { Dispatch, PointerEvent, ReactElement, ReactNode, SetStateAction } from "react";
 import {
   Bar,
   BarChart,
@@ -929,6 +929,112 @@ function WishChips({
   );
 }
 
+function isSignatureImage(value: string) {
+  return value.startsWith("data:image/");
+}
+
+function SignaturePad({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drawingRef = useRef(false);
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const scale = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.floor(rect.width * scale));
+    canvas.height = Math.max(1, Math.floor(rect.height * scale));
+    context.setTransform(scale, 0, 0, scale, 0, 0);
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.lineWidth = 3;
+    context.strokeStyle = "#18211f";
+    context.clearRect(0, 0, rect.width, rect.height);
+
+    if (isSignatureImage(value)) {
+      const image = new Image();
+      image.onload = () => {
+        context.clearRect(0, 0, rect.width, rect.height);
+        context.drawImage(image, 0, 0, rect.width, rect.height);
+      };
+      image.src = value;
+    }
+  }, [value]);
+
+  const pointFromEvent = (event: PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  };
+
+  const beginDrawing = (event: PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) return;
+    canvas.setPointerCapture(event.pointerId);
+    drawingRef.current = true;
+    const point = pointFromEvent(event);
+    lastPointRef.current = point;
+    context.beginPath();
+    context.arc(point.x, point.y, 1.6, 0, Math.PI * 2);
+    context.fillStyle = "#18211f";
+    context.fill();
+  };
+
+  const draw = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (!drawingRef.current) return;
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    const lastPoint = lastPointRef.current;
+    if (!canvas || !context || !lastPoint) return;
+    const point = pointFromEvent(event);
+    context.beginPath();
+    context.moveTo(lastPoint.x, lastPoint.y);
+    context.lineTo(point.x, point.y);
+    context.stroke();
+    lastPointRef.current = point;
+  };
+
+  const endDrawing = () => {
+    const canvas = canvasRef.current;
+    if (!drawingRef.current || !canvas) return;
+    drawingRef.current = false;
+    lastPointRef.current = null;
+    onChange(canvas.toDataURL("image/png"));
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) return;
+    const rect = canvas.getBoundingClientRect();
+    context.clearRect(0, 0, rect.width, rect.height);
+    onChange("");
+  };
+
+  return (
+    <div className="signature-pad">
+      <canvas
+        ref={canvasRef}
+        aria-label="Unterschrift zeichnen"
+        onPointerDown={beginDrawing}
+        onPointerMove={draw}
+        onPointerUp={endDrawing}
+        onPointerCancel={endDrawing}
+        onPointerLeave={endDrawing}
+      />
+      <button className="secondary-button" type="button" onClick={clearSignature}>
+        <Trash2 size={18} /> Löschen
+      </button>
+    </div>
+  );
+}
+
 function CertificateScreen({
   data,
   setData,
@@ -1110,14 +1216,20 @@ function CertificateScreen({
               onChange={(event) => updateDraft("favoriteMoment", event.target.value)}
             />
           </label>
-          <label>
+          <div className="signature-field">
             Unterschrift
-            <input value={data.draft.signature} onChange={(event) => updateDraft("signature", event.target.value)} />
-          </label>
+            <SignaturePad value={data.draft.signature} onChange={(value) => updateDraft("signature", value)} />
+          </div>
         </div>
         <footer className="certificate-signature">
           <span>{data.draft.date}</span>
-          <strong>{data.draft.signature || "Unterschrift"}</strong>
+          <strong>
+            {isSignatureImage(data.draft.signature) ? (
+              <img src={data.draft.signature} alt="Unterschrift" />
+            ) : (
+              data.draft.signature || "Unterschrift"
+            )}
+          </strong>
         </footer>
       </article>
     </section>

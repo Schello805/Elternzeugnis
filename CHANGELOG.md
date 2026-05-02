@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.18
+
+- Unterschrift-Textfeld durch echtes Zeichenfeld ersetzt
+- Unterschreiben mit Finger, Maus oder iPad-Stift ermöglicht
+- Unterschrift wird als Bild im Zeugnis gespeichert und im PDF ausgegeben
+- Löschen-Funktion für die gezeichnete Unterschrift ergänzt
+- API-JSON-Limit für Bilddaten der Unterschrift erhöht
+- Versionsnummer erhöht
+
 ## 0.1.17
 
 - Bewertungsbereiche an die Vorlage aus dem Foto angepasst

@@ -461,6 +461,14 @@ label {
   gap: 7px;
 }
 
+.signature-field {
+  color: #33403c;
+  display: grid;
+  font-size: 0.9rem;
+  font-weight: 850;
+  gap: 7px;
+}
+
 input,
 select,
 textarea {
@@ -1118,7 +1126,20 @@ textarea {
   padding: 12px;
 }
 
+.certificate-sheet.design-rainbow .certificate-fields .signature-field {
+  background: #fff;
+  border: 2px solid #f0b84d;
+  border-radius: 18px;
+  padding: 12px;
+}
+
 .certificate-sheet.design-forest .certificate-fields label {
+  background: rgba(255, 255, 255, 0.55);
+  border-left: 5px solid #8aa16d;
+  padding: 12px;
+}
+
+.certificate-sheet.design-forest .certificate-fields .signature-field {
   background: rgba(255, 255, 255, 0.55);
   border-left: 5px solid #8aa16d;
   padding: 12px;
@@ -1131,8 +1152,36 @@ textarea {
   padding: 12px;
 }
 
+.certificate-sheet.design-space .certificate-fields .signature-field {
+  background: rgba(15, 23, 42, 0.68);
+  border: 1px solid rgba(110, 166, 200, 0.45);
+  border-radius: 4px;
+  padding: 12px;
+}
+
 .certificate-fields label:nth-child(3) {
   grid-column: 1 / -1;
+}
+
+.signature-pad {
+  display: grid;
+  gap: 8px;
+}
+
+.signature-pad canvas {
+  background:
+    linear-gradient(transparent 72%, rgba(36, 48, 45, 0.28) 73%, transparent 74%),
+    #fffaf0;
+  border: 1px dashed #b8aa93;
+  border-radius: 8px;
+  cursor: crosshair;
+  height: 132px;
+  touch-action: none;
+  width: 100%;
+}
+
+.signature-pad .secondary-button {
+  justify-self: start;
 }
 
 .certificate-signature {
@@ -1147,9 +1196,18 @@ textarea {
 
 .certificate-signature strong {
   border-top: 2px solid currentColor;
+  display: grid;
+  justify-items: center;
   min-width: 220px;
   padding-top: 8px;
   text-align: center;
+}
+
+.certificate-signature img {
+  display: block;
+  max-height: 62px;
+  max-width: 220px;
+  object-fit: contain;
 }
 
 .page-grid,
