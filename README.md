@@ -14,12 +14,16 @@ Der pädagogische Kern ist ein Gespräch auf Augenhöhe. Ein Elternzeugnis soll 
 - direkte Eingabe der Noten im Zeugnisdesign
 - Start-Dashboard für die wichtigsten Wege
 - Kindermodus mit großer Touch-Bedienung
-- Startauswahl für Kind, Elternteil, Jahr und Design vor dem Kindermodus
+- Startauswahl für Kind, Elternteil, Kalenderjahr und Design vor dem Kindermodus
+- Geburtsdatum in den Kinder-Stammdaten für altersgerechte Texte
 - beziehungsorientierte Fragen statt reiner Leistungsbewertung
 - Stammdaten für Kinder, Eltern und Bezugspersonen
 - Verlauf über gespeicherte Zeugnisse pro Jahr
 - zentrale Speicherung auf dem lokalen Server für Smartphone, Tablet und Desktop
+- SQLite-Datenbank mit automatischer Migration aus älteren JSON-Daten
+- Konflikterkennung, wenn mehrere Geräte gleichzeitig Änderungen speichern
 - grafische Auswertungen mit Durchschnitt und Kategorien
+- pädagogische Auswertungen zu wiederkehrenden Bedürfnissen und Ressourcen
 - geführte Leerzustände und Erfolgsmeldungen
 - pädagogische Wunschbausteine bei schwierigen Bewertungen
 - Bewertungsbereiche wie Geduld, Zuhören, Spielzeit, Fairness und Lernhilfe
@@ -33,6 +37,7 @@ Der pädagogische Kern ist ein Gespräch auf Augenhöhe. Ein Elternzeugnis soll 
 - Design-Auswahl mit Mini-Vorschau
 - App-Logo, Favicon und Web-App-Manifest
 - Export und Import der App-Daten
+- Adminseite mit Status, Speicherorten und manuellem Backup
 - Footer mit GitHub-Link und automatischer Versions-/Revisionsanzeige
 
 ## Lokale Entwicklung
@@ -58,7 +63,7 @@ Für die lokale Entwicklung bleibt die API absichtlich auf `127.0.0.1` gebunden.
 
 ## Installation auf Debian oder Ubuntu
 
-Das Installationsskript richtet Node.js, Abhängigkeiten, Build, `.env`, systemd-Service und Prüfungen ein:
+Das Installationsskript richtet Node.js, SQLite, Abhängigkeiten, Build, `.env`, systemd-Service und Prüfungen ein:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Schello805/Elternzeugnis/main/scripts/install-debian-ubuntu.sh | sudo bash
@@ -115,7 +120,7 @@ Das Update-Skript:
 
 - sichert `.env` und `data/` nach `/var/backups/elternzeugnis`
 - zieht `origin/main`
-- installiert Abhängigkeiten per `npm ci`
+- installiert fehlendes SQLite und Abhängigkeiten per `npm ci`
 - baut die App neu
 - aktualisiert die systemd-Service-Datei passend zum aktuellen `APP_DIR`
 - startet den systemd-Service neu
@@ -167,17 +172,19 @@ Beim Starten und Bauen wird automatisch `src/generated/version.ts` aktualisiert.
 
 ## Daten
 
-Die App speichert Stammdaten, Entwurf und Zeugnisverlauf zentral auf dem lokalen Server in:
+Die App speichert Stammdaten, Entwurf und Zeugnisverlauf zentral auf dem lokalen Server in einer SQLite-Datenbank:
 
 ```text
-data/app-data.json
+data/elternzeugnis.sqlite
 ```
 
-Dadurch sehen Smartphone, Tablet und Desktop denselben Datenstand, solange sie dieselbe lokale Installation aufrufen. Geöffnete Geräte laden Änderungen beim Zurückwechseln in den Tab und regelmäßig im Hintergrund nach. Zusätzlich legt der Browser weiterhin ein lokales Backup im `localStorage` an. Wenn der Server beim ersten Start noch leer ist und auf einem Gerät bereits ältere lokale Daten vorhanden sind, übernimmt die App diese Daten automatisch in die zentrale Ablage.
+Dadurch sehen Smartphone, Tablet und Desktop denselben Datenstand, solange sie dieselbe lokale Installation aufrufen. Geöffnete Geräte laden Änderungen beim Zurückwechseln in den Tab und regelmäßig im Hintergrund nach. Wenn zwei Geräte parallel speichern, erkennt die App den Konflikt und lädt die aktuelle Serverversion, statt unbemerkt Daten zu überschreiben.
+
+Zusätzlich legt der Browser weiterhin ein lokales Backup im `localStorage` an. Wenn der Server beim ersten Start noch leer ist und auf einem Gerät bereits ältere lokale Daten vorhanden sind, übernimmt die App diese Daten automatisch in die zentrale Ablage. Ältere `data/app-data.json` Daten werden beim Serverstart automatisch in SQLite migriert.
 
 Für E-Mail-Erinnerungen speichert der API-Server Erinnerungsdaten in `data/reminders.json`. SMTP-Zugangsdaten liegen in der `.env` Datei. Die SMTP-Konfiguration kann über die Oberfläche gepflegt werden.
 
-Das Installations- und Update-Skript sichert den kompletten Ordner `data/`, also auch `app-data.json` und `reminders.json`.
+Das Installations- und Update-Skript sichert den kompletten Ordner `data/`, also auch `elternzeugnis.sqlite`, `reminders.json` und Backups. Zusätzlich legt der Server täglich ein Backup unter `data/backups/` an. Über die Adminseite kann jederzeit manuell ein Backup erstellt werden.
 
 ## Repository
 

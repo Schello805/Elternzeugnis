@@ -40,7 +40,7 @@ check_system() {
 install_packages() {
   log "Systempakete installieren"
   apt-get update
-  apt-get install -y ca-certificates curl git build-essential
+  apt-get install -y ca-certificates curl git build-essential sqlite3
 }
 
 install_node() {

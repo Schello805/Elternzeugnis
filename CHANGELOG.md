@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.13
+
+- Zeugnisjahr auf Kalenderjahr umgestellt
+- SQLite-Datenbank `data/elternzeugnis.sqlite` mit Migration aus `data/app-data.json` ergänzt
+- Konflikterkennung für parallele Änderungen mehrerer Geräte ergänzt
+- Geburtsdatum für Kinder in den Stammdaten ergänzt
+- Fragen und Wunschbausteine werden altersabhängig formuliert
+- Einrichtungsführung für unvollständige Stammdaten ergänzt
+- Pädagogische Auswertung mit Bedürfnissen und Ressourcen erweitert
+- Zeugnisarchiv mit Öffnen und Markieren wichtiger Zeugnisse ergänzt
+- Offline- und Konflikthinweise im Synchronisationsstatus verbessert
+- Adminseite mit Status, Speicherorten, Zählwerten und manuellem Backup ergänzt
+- Tägliche automatische Backups vorbereitet
+- Versionsnummer erhöht
+
 ## 0.1.12
 
 - Zentrale serverseitige Speicherung für Stammdaten, Entwurf und Zeugnisverlauf ergänzt

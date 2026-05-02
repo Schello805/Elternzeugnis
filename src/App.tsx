@@ -1,8 +1,10 @@
 import {
+  Archive,
   BarChart3,
   BookOpen,
   CalendarClock,
   CheckCircle2,
+  Database,
   Download,
   FileText,
   Github,
@@ -10,7 +12,9 @@ import {
   Mail,
   Pencil,
   Plus,
+  RefreshCw,
   Save,
+  Settings,
   Sparkles,
   Star,
   Trash2,
@@ -38,7 +42,7 @@ import { appBranch, appBuildTime, appRevision, appVersion } from "./generated/ve
 const githubUrl = "https://github.com/Schello805/Elternzeugnis";
 const storageKey = "elternzeugnis:v2";
 
-type View = "home" | "certificate" | "child" | "people" | "history" | "reminders";
+type View = "home" | "certificate" | "child" | "people" | "history" | "reminders" | "admin";
 type Frequency = "once" | "monthly" | "yearly";
 type Design = "classic" | "rainbow" | "forest" | "space";
 
@@ -46,6 +50,7 @@ type Person = {
   id: string;
   name: string;
   email?: string;
+  birthDate?: string;
 };
 
 type Category = {
@@ -68,6 +73,7 @@ type Certificate = {
   signature: string;
   design: Design;
   createdAt: string;
+  favorite?: boolean;
 };
 
 type Reminder = {
@@ -88,6 +94,11 @@ type AppData = {
   parents: Person[];
   draft: Certificate;
   certificates: Certificate[];
+  meta?: {
+    updatedAt?: string;
+    revision?: string;
+    setupComplete?: boolean;
+  };
 };
 
 type SmtpConfig = {
@@ -102,6 +113,20 @@ type SmtpConfig = {
 };
 
 type SyncState = "lade" | "synchronisiert" | "speichert" | "offline";
+
+type AdminStatus = {
+  version: string;
+  host: string;
+  port: number;
+  databaseFile: string;
+  databaseAvailable: boolean;
+  remindersFile: string;
+  remindersAvailable: boolean;
+  backupsDir: string;
+  counts: { children: number; parents: number; certificates: number };
+  updatedAt: string | null;
+  smtpConfigured: boolean;
+};
 
 const categories: Category[] = [
   {
@@ -177,12 +202,76 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function calendarYear(value?: string, date = today()) {
+  if (value && /^\d{4}$/.test(value)) return value;
+  const fromDate = new Date(`${date}T00:00:00`);
+  return String(Number.isNaN(fromDate.getTime()) ? new Date().getFullYear() : fromDate.getFullYear());
+}
+
+function childAge(child: Person | undefined, atDate = today()) {
+  if (!child?.birthDate) return null;
+  const birth = new Date(`${child.birthDate}T00:00:00`);
+  const at = new Date(`${atDate}T00:00:00`);
+  if (Number.isNaN(birth.getTime())) return null;
+  let age = at.getFullYear() - birth.getFullYear();
+  const hadBirthday =
+    at.getMonth() > birth.getMonth() || (at.getMonth() === birth.getMonth() && at.getDate() >= birth.getDate());
+  if (!hadBirthday) age -= 1;
+  return age >= 0 ? age : null;
+}
+
+function ageGroup(age: number | null) {
+  if (age === null) return "unknown";
+  if (age <= 6) return "young";
+  if (age <= 10) return "primary";
+  return "older";
+}
+
+function ageLabel(child: Person | undefined, atDate = today()) {
+  const age = childAge(child, atDate);
+  return age === null ? "Alter nicht angegeben" : `${age} Jahre`;
+}
+
+function ageAdaptedHint(category: Category, child: Person | undefined, atDate = today()) {
+  const group = ageGroup(childAge(child, atDate));
+  const additions: Record<string, string> = {
+    young: "Achte besonders auf einfache Worte, Nähe und klare kleine Beispiele.",
+    primary: "Formuliere konkret: Wann war es gut, wann brauchst du etwas anderes?",
+    older: "Du darfst differenziert schreiben: Was ist fair, was fehlt, was wäre ein guter nächster Schritt?",
+    unknown: "Mit Geburtsdatum in den Stammdaten werden die Texte automatisch altersgerechter.",
+  };
+  return `${category.childHint} ${additions[group]}`;
+}
+
+function wishSuggestions(category: Category, child: Person | undefined) {
+  const group = ageGroup(childAge(child));
+  if (group === "young") {
+    return [
+      `Ich wünsche mir bei ${category.title.toLowerCase()} mehr Hilfe und ruhige Worte.`,
+      "Bitte frag mich: Soll ich dich drücken, helfen oder kurz warten?",
+      "Lass uns eine kleine Sache üben, die wir beide schaffen.",
+    ];
+  }
+  if (group === "older") {
+    return [
+      `Ich wünsche mir bei ${category.title.toLowerCase()} eine klare Abmachung, die für uns beide fair ist.`,
+      "Bitte hör erst zu, bevor wir gemeinsam eine Lösung suchen.",
+      "Lass uns nach einem Streit kurz sortieren, was jeder gebraucht hätte.",
+    ];
+  }
+  return [
+    `Ich wünsche mir bei ${category.title.toLowerCase()} mehr gemeinsame Zeit.`,
+    "Bitte frag mich zuerst, was ich gerade brauche.",
+    "Lass uns eine kleine Abmachung machen, die wir beide schaffen.",
+  ];
+}
+
 function newCertificate(childId = "child-1", parentId = "parent-1"): Certificate {
   return {
     id: newId(),
     childId,
     parentId,
-    year: "2025/2026",
+    year: String(new Date().getFullYear()),
     date: today(),
     grades: { ...defaultGrades },
     strengths: "",
@@ -202,6 +291,7 @@ const initialData: AppData = {
   ],
   draft: newCertificate(),
   certificates: [],
+  meta: { setupComplete: false },
 };
 
 function designLabel(design: Design) {
@@ -230,10 +320,20 @@ function normalizeData(value: Partial<AppData> | null | undefined): AppData {
   return {
     ...initialData,
     ...parsed,
-    children: parsed.children?.length ? parsed.children : initialData.children,
-    parents: parsed.parents?.length ? parsed.parents : initialData.parents,
-    draft: { ...draft, grades: { ...defaultGrades, ...draft.grades }, design: draft.design || "classic" },
-    certificates: parsed.certificates || [],
+    children: parsed.children?.length ? parsed.children.map((person) => ({ ...person, birthDate: person.birthDate || "" })) : initialData.children,
+    parents: parsed.parents?.length ? parsed.parents.map((person) => ({ ...person, birthDate: person.birthDate || "" })) : initialData.parents,
+    draft: {
+      ...draft,
+      year: calendarYear(String(draft.year || ""), draft.date || today()),
+      grades: { ...defaultGrades, ...draft.grades },
+      design: draft.design || "classic",
+    },
+    certificates: (parsed.certificates || []).map((certificate) => ({
+      ...certificate,
+      year: calendarYear(String(certificate.year || ""), certificate.date || certificate.createdAt || today()),
+      favorite: Boolean(certificate.favorite),
+    })),
+    meta: parsed.meta || initialData.meta,
   };
 }
 
@@ -278,6 +378,12 @@ async function saveAppData(data: AppData) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
+  if (response.status === 409) {
+    const conflict = (await response.json()) as { data?: Partial<AppData> };
+    const error = new Error("Die Daten wurden auf einem anderen Gerät geändert.");
+    (error as Error & { serverData?: AppData }).serverData = normalizeData(conflict.data);
+    throw error;
+  }
   if (!response.ok) throw new Error("Daten konnten nicht gespeichert werden.");
   return normalizeData((await response.json()) as Partial<AppData>);
 }
@@ -287,8 +393,10 @@ export function App() {
   const [view, setView] = useState<View>("home");
   const [serverLoaded, setServerLoaded] = useState(false);
   const [syncState, setSyncState] = useState<SyncState>("lade");
+  const [syncMessage, setSyncMessage] = useState("");
   const dataRef = useRef(data);
   const lastChangeAt = useRef(Date.now());
+  const skipNextSave = useRef(false);
 
   useEffect(() => {
     dataRef.current = data;
@@ -333,14 +441,31 @@ export function App() {
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(data));
     if (!serverLoaded) return;
+    if (skipNextSave.current) {
+      skipNextSave.current = false;
+      return;
+    }
     const timeout = window.setTimeout(() => {
       setSyncState("speichert");
       saveAppData(data)
         .then((savedData) => {
           localStorage.setItem(storageKey, JSON.stringify(savedData));
+          skipNextSave.current = true;
+          setData(savedData);
           setSyncState("synchronisiert");
+          setSyncMessage("");
         })
-        .catch(() => setSyncState("offline"));
+        .catch((error: Error & { serverData?: AppData }) => {
+          if (error.serverData) {
+            skipNextSave.current = true;
+            setData(error.serverData);
+            setSyncState("offline");
+            setSyncMessage("Ein anderes Gerät war schneller. Die aktuelle Serverversion wurde geladen.");
+            return;
+          }
+          setSyncState("offline");
+          setSyncMessage("Server nicht erreichbar. Änderungen bleiben vorerst nur auf diesem Gerät.");
+        });
     }, 700);
 
     return () => window.clearTimeout(timeout);
@@ -356,6 +481,7 @@ export function App() {
         if (!response.ok) throw new Error("Serverdaten konnten nicht geladen werden.");
         const serverData = normalizeData((await response.json()) as Partial<AppData>);
         if (JSON.stringify(serverData) !== JSON.stringify(dataRef.current)) {
+          skipNextSave.current = true;
           setData(serverData);
           localStorage.setItem(storageKey, JSON.stringify(serverData));
         }
@@ -382,7 +508,7 @@ export function App() {
 
   return (
     <div className="app-shell">
-      <Header view={view} setView={setView} syncState={syncState} />
+      <Header view={view} setView={setView} syncState={syncState} syncMessage={syncMessage} />
       <main>
         <AppWorkspace data={data} setData={setData} view={view} setView={setView} />
       </main>
@@ -391,7 +517,17 @@ export function App() {
   );
 }
 
-function Header({ view, setView, syncState }: { view: View; setView: (view: View) => void; syncState: SyncState }) {
+function Header({
+  view,
+  setView,
+  syncState,
+  syncMessage,
+}: {
+  view: View;
+  setView: (view: View) => void;
+  syncState: SyncState;
+  syncMessage: string;
+}) {
   const syncText: Record<SyncState, string> = {
     lade: "Lade Serverdaten",
     synchronisiert: "Zentral gespeichert",
@@ -412,7 +548,9 @@ function Header({ view, setView, syncState }: { view: View; setView: (view: View
           </span>
         </div>
         <nav className="topnav" aria-label="Projekt">
-          <span className={`sync-badge ${syncState}`}>{syncText[syncState]}</span>
+          <span className={`sync-badge ${syncState}`} title={syncMessage || syncText[syncState]}>
+            {syncText[syncState]}
+          </span>
           <a href={githubUrl} target="_blank" rel="noreferrer">
             <Github size={18} /> GitHub
           </a>
@@ -425,6 +563,7 @@ function Header({ view, setView, syncState }: { view: View; setView: (view: View
         <Tab active={view === "people"} onClick={() => setView("people")} icon={<UsersRound size={19} />} label="Stammdaten" />
         <Tab active={view === "history"} onClick={() => setView("history")} icon={<BarChart3 size={19} />} label="Verlauf" />
         <Tab active={view === "reminders"} onClick={() => setView("reminders")} icon={<CalendarClock size={19} />} label="Erinnerungen" />
+        <Tab active={view === "admin"} onClick={() => setView("admin")} icon={<Settings size={19} />} label="Admin" />
       </nav>
     </header>
   );
@@ -449,6 +588,7 @@ function AppWorkspace({
       {view === "people" ? <PeopleScreen data={data} setData={setData} /> : null}
       {view === "history" ? <HistoryScreen data={data} setData={setData} setView={setView} /> : null}
       {view === "reminders" ? <ReminderScreen data={data} /> : null}
+      {view === "admin" ? <AdminScreen /> : null}
     </div>
   );
 }
@@ -477,9 +617,25 @@ function Dashboard({ data, setView }: { data: AppData; setView: (view: View) => 
   const draftHasText = Boolean(
     data.draft.strengths || data.draft.wishes || data.draft.favoriteMoment || data.draft.signature,
   );
+  const needsSetup =
+    !data.meta?.setupComplete ||
+    data.children.some((person) => !person.birthDate) ||
+    data.children.some((person) => person.name === "Kind");
 
   return (
     <section className="dashboard">
+      {needsSetup ? (
+        <div className="setup-strip">
+          <div>
+            <p className="eyebrow">Einrichtung</p>
+            <strong>Stammdaten vervollständigen</strong>
+            <span>Geburtsdatum der Kinder eintragen, damit Fragen und Wunschbausteine altersgerecht formuliert werden.</span>
+          </div>
+          <button className="primary-button" onClick={() => setView("people")}>
+            <UsersRound size={19} /> Einrichten
+          </button>
+        </div>
+      ) : null}
       <div className="dashboard-hero">
         <p className="eyebrow">Familien-App</p>
         <h1>Ein liebevolles Ritual für Beziehung, Mut und echte Gespräche</h1>
@@ -511,7 +667,7 @@ function Dashboard({ data, setView }: { data: AppData; setView: (view: View) => 
         <button className="dashboard-card" onClick={() => setView("history")}>
           <BarChart3 size={25} />
           <strong>{data.certificates.length} gespeicherte Zeugnisse</strong>
-          <span>{lastCertificate ? `Zuletzt: ${lastCertificate.year}` : "Entwicklung über die Jahre sichtbar machen."}</span>
+          <span>{lastCertificate ? `Zuletzt: Kalenderjahr ${lastCertificate.year}` : "Entwicklung über die Jahre sichtbar machen."}</span>
         </button>
         <button className="dashboard-card" onClick={() => setView("reminders")}>
           <CalendarClock size={25} />
@@ -562,7 +718,7 @@ function ChildModeScreen({
           <p className="eyebrow">Vor dem Start</p>
           <h1>Für wen wird dieses Elternzeugnis ausgefüllt?</h1>
           <p className="setup-intro">
-            Erst wählen wir Kind, Elternteil und Zeugnisjahr. Danach sieht das Kind nur noch die
+            Erst wählen wir Kind, Elternteil und Kalenderjahr. Danach sieht das Kind nur noch die
             einfachen Fragen im Kindermodus.
           </p>
           <div className="form-grid">
@@ -587,7 +743,7 @@ function ChildModeScreen({
               </select>
             </label>
             <label>
-              Zeugnisjahr
+              Kalenderjahr
               <input value={data.draft.year} onChange={(event) => updateDraft("year", event.target.value)} />
             </label>
             <label>
@@ -637,7 +793,8 @@ function ChildModeScreen({
         </div>
         <div className="child-question">
           <strong>{category.title}</strong>
-          <p>{category.childHint}</p>
+          <p>{ageAdaptedHint(category, child, data.draft.date)}</p>
+          <small>{child?.name || "Kind"}: {ageLabel(child, data.draft.date)}</small>
         </div>
         <div className="big-grade-grid">
           {[1, 2, 3, 4, 5, 6].map((grade) => (
@@ -651,7 +808,7 @@ function ChildModeScreen({
             </button>
           ))}
         </div>
-        {data.draft.grades[category.id] >= 5 ? <WishChips category={category} setData={setData} /> : null}
+        {data.draft.grades[category.id] >= 5 ? <WishChips category={category} child={child} setData={setData} /> : null}
         <div className="hero-actions">
           {focusIndex === 0 ? (
             <button className="secondary-button" onClick={() => setSetupDone(false)}>
@@ -683,16 +840,14 @@ function gradeCopy(grade: number) {
 
 function WishChips({
   category,
+  child,
   setData,
 }: {
   category: Category;
+  child?: Person;
   setData: Dispatch<SetStateAction<AppData>>;
 }) {
-  const wishes = [
-    `Ich wünsche mir bei ${category.title.toLowerCase()} mehr gemeinsame Zeit.`,
-    "Bitte frag mich zuerst, was ich gerade brauche.",
-    "Lass uns eine kleine Abmachung machen, die wir beide schaffen.",
-  ];
+  const wishes = wishSuggestions(category, child);
 
   const addWish = (wish: string) => {
     setData((current) => ({
@@ -798,7 +953,7 @@ function CertificateScreen({
           </select>
         </label>
         <label>
-          Zeugnisjahr
+          Kalenderjahr
           <input value={data.draft.year} onChange={(event) => updateDraft("year", event.target.value)} />
         </label>
         <label>
@@ -848,9 +1003,9 @@ function CertificateScreen({
             <Star size={20} />
             Familienzeugnis
           </div>
-          <p>Schuljahr {data.draft.year || "____ / ____"}</p>
+          <p>Kalenderjahr {data.draft.year || "____"}</p>
           <h2>Zeugnis für {parent?.name || "____________"}</h2>
-          <span>ausgestellt von {child?.name || "____________"}</span>
+          <span>ausgestellt von {child?.name || "____________"} ({ageLabel(child, data.draft.date)})</span>
           <small className="design-subtitle">{designSubtitle(data.draft.design)}</small>
         </header>
 
@@ -859,7 +1014,7 @@ function CertificateScreen({
             <section className="grade-line" key={category.id}>
               <div>
                 <strong>{category.title}</strong>
-                <small>{category.childHint}</small>
+                <small>{ageAdaptedHint(category, child, data.draft.date)}</small>
               </div>
               <div className="grade-picker" aria-label={`Note für ${category.title}`}>
                 {[1, 2, 3, 4, 5, 6].map((grade) => (
@@ -877,7 +1032,7 @@ function CertificateScreen({
                 <div className="inline-advice">
                   <Sparkles size={16} />
                   <span>{category.advice}</span>
-                  <WishChips category={category} setData={setData} />
+                  <WishChips category={category} child={child} setData={setData} />
                 </div>
               ) : null}
             </section>
@@ -931,7 +1086,10 @@ function PeopleScreen({
   const addPerson = (group: "children" | "parents") => {
     setData((current) => ({
       ...current,
-      [group]: [...current[group], { id: newId(), name: group === "children" ? "Neues Kind" : "Elternteil", email: "" }],
+      [group]: [
+        ...current[group],
+        { id: newId(), name: group === "children" ? "Neues Kind" : "Elternteil", email: "", birthDate: "" },
+      ],
     }));
   };
 
@@ -939,6 +1097,13 @@ function PeopleScreen({
     setData((current) => ({
       ...current,
       [group]: current[group].filter((person) => person.id !== id),
+    }));
+  };
+
+  const completeSetup = () => {
+    setData((current) => ({
+      ...current,
+      meta: { ...current.meta, setupComplete: true },
     }));
   };
 
@@ -952,12 +1117,16 @@ function PeopleScreen({
             Bereite die Namen vor, damit Kinder später ohne technische Hürden erzählen können,
             was sie stärkt, was sie brauchen und worüber sie gerne sprechen möchten.
           </p>
+          <button className="primary-button" onClick={completeSetup}>
+            <CheckCircle2 size={19} /> Einrichtung als erledigt markieren
+          </button>
         </div>
       </section>
       <PersonList
         title="Kinder"
         icon={<UserRound size={24} />}
         people={data.children}
+        showBirthDate
         showEmail={false}
         onAdd={() => addPerson("children")}
         onRemove={(id) => removePerson("children", id)}
@@ -967,6 +1136,7 @@ function PeopleScreen({
         title="Eltern und Bezugspersonen"
         icon={<UsersRound size={24} />}
         people={data.parents}
+        showBirthDate={false}
         showEmail
         onAdd={() => addPerson("parents")}
         onRemove={(id) => removePerson("parents", id)}
@@ -1027,6 +1197,7 @@ function PersonList({
   icon,
   people,
   showEmail,
+  showBirthDate,
   onAdd,
   onRemove,
   onChange,
@@ -1035,6 +1206,7 @@ function PersonList({
   icon: ReactNode;
   people: Person[];
   showEmail: boolean;
+  showBirthDate: boolean;
   onAdd: () => void;
   onRemove: (id: string) => void;
   onChange: (id: string, patch: Partial<Person>) => void;
@@ -1052,6 +1224,16 @@ function PersonList({
               Name
               <input value={person.name} onChange={(event) => onChange(person.id, { name: event.target.value })} />
             </label>
+            {showBirthDate ? (
+              <label>
+                Geburtsdatum
+                <input
+                  type="date"
+                  value={person.birthDate || ""}
+                  onChange={(event) => onChange(person.id, { birthDate: event.target.value })}
+                />
+              </label>
+            ) : null}
             {showEmail ? (
               <label>
                 E-Mail für Erinnerungen
@@ -1101,10 +1283,21 @@ function HistoryScreen({
     const average = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
     return { name: category.title, average: Number(average.toFixed(2)) };
   });
+  const attentionAreas = categoryAverages.filter((item) => item.average >= 4).sort((a, b) => b.average - a.average);
+  const positiveAreas = categoryAverages.filter((item) => item.average > 0 && item.average <= 2.5).sort((a, b) => a.average - b.average);
 
   const editCertificate = (certificate: Certificate) => {
     setData((current) => ({ ...current, draft: { ...certificate, id: newId(), design: certificate.design || "classic" } }));
     setView("certificate");
+  };
+
+  const toggleFavorite = (certificateId: string) => {
+    setData((current) => ({
+      ...current,
+      certificates: current.certificates.map((certificate) =>
+        certificate.id === certificateId ? { ...certificate, favorite: !certificate.favorite } : certificate,
+      ),
+    }));
   };
 
   const deleteCertificate = (certificateId: string) => {
@@ -1122,26 +1315,46 @@ function HistoryScreen({
           <h1>Verlauf und Auswertung</h1>
         </div>
         {data.certificates.length ? (
-          <div className="chart-grid">
-            <ChartCard title="Notendurchschnitt je Zeugnis">
-              <LineChart data={analytics}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="year" />
-                <YAxis reversed domain={[1, 6]} ticks={[1, 2, 3, 4, 5, 6]} />
-                <Tooltip />
-                <Line type="monotone" dataKey="average" stroke="#24594c" strokeWidth={3} />
-              </LineChart>
-            </ChartCard>
-            <ChartCard title="Durchschnitt nach Kategorie">
-              <BarChart data={categoryAverages}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" hide />
-                <YAxis reversed domain={[1, 6]} ticks={[1, 2, 3, 4, 5, 6]} />
-                <Tooltip />
-                <Bar dataKey="average" fill="#c65d3b" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ChartCard>
-          </div>
+          <>
+            <div className="insight-grid">
+              <article>
+                <strong>Wiederkehrende Bedürfnisse</strong>
+                <span>
+                  {attentionAreas.length
+                    ? `${attentionAreas[0].name} braucht besonders Aufmerksamkeit. Plant dazu eine kleine, konkrete Abmachung.`
+                    : "Aktuell zeigen die Zeugnisse keine starken Belastungsschwerpunkte."}
+                </span>
+              </article>
+              <article>
+                <strong>Ressourcen</strong>
+                <span>
+                  {positiveAreas.length
+                    ? `${positiveAreas[0].name} wird häufig als stärkend erlebt. Das ist ein guter Anker für Gespräche.`
+                    : "Sobald mehr Zeugnisse gespeichert sind, werden stärkende Muster sichtbarer."}
+                </span>
+              </article>
+            </div>
+            <div className="chart-grid">
+              <ChartCard title="Notendurchschnitt je Kalenderjahr">
+                <LineChart data={analytics}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="year" />
+                  <YAxis reversed domain={[1, 6]} ticks={[1, 2, 3, 4, 5, 6]} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="average" stroke="#24594c" strokeWidth={3} />
+                </LineChart>
+              </ChartCard>
+              <ChartCard title="Durchschnitt nach Kategorie">
+                <BarChart data={categoryAverages}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" hide />
+                  <YAxis reversed domain={[1, 6]} ticks={[1, 2, 3, 4, 5, 6]} />
+                  <Tooltip />
+                  <Bar dataKey="average" fill="#c65d3b" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ChartCard>
+            </div>
+          </>
         ) : (
           <div className="guided-empty">
             <FileText size={34} />
@@ -1164,13 +1377,16 @@ function HistoryScreen({
           .map((certificate) => (
             <article className="timeline-item" key={certificate.id}>
               <strong>
-                {certificate.year}: {certificate.child} für {certificate.parent}
+                {certificate.favorite ? "★ " : ""}{certificate.year}: {certificate.child} für {certificate.parent}
               </strong>
               <span>Durchschnitt {certificate.average}</span>
               <p>{certificate.favoriteMoment || certificate.strengths || "Noch kein gemeinsamer Moment notiert."}</p>
               <div className="timeline-actions">
                 <button className="secondary-button" onClick={() => editCertificate(certificate)}>
-                  Bearbeiten
+                  <Archive size={18} /> Öffnen
+                </button>
+                <button className="secondary-button" onClick={() => toggleFavorite(certificate.id)}>
+                  <Star size={18} /> {certificate.favorite ? "Wichtig" : "Merken"}
                 </button>
                 <button className="icon-button" onClick={() => deleteCertificate(certificate.id)} aria-label="Zeugnis löschen">
                   <Trash2 size={18} />
@@ -1191,6 +1407,92 @@ function ChartCard({ title, children }: { title: string; children: ReactElement 
         {children}
       </ResponsiveContainer>
     </article>
+  );
+}
+
+function AdminScreen() {
+  const [status, setStatus] = useState<AdminStatus | null>(null);
+  const [message, setMessage] = useState("");
+
+  const loadStatus = async () => {
+    const response = await fetch("/api/admin/status");
+    if (!response.ok) throw new Error("Adminstatus konnte nicht geladen werden.");
+    setStatus((await response.json()) as AdminStatus);
+  };
+
+  useEffect(() => {
+    loadStatus().catch(() => setMessage("Admin-API ist nicht erreichbar."));
+  }, []);
+
+  const createBackupNow = async () => {
+    const response = await fetch("/api/admin/backup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: "manual" }),
+    });
+    const result = (await response.json()) as { files?: string[] };
+    setMessage(response.ok ? `Backup erstellt: ${result.files?.length || 0} Datei(en).` : "Backup konnte nicht erstellt werden.");
+    await loadStatus();
+  };
+
+  return (
+    <section className="page-grid">
+      <section className="panel wide-panel">
+        <div className="panel-title">
+          <Settings size={25} />
+          <h1>Admin und Wartung</h1>
+        </div>
+        <p className="empty-state">
+          Prüfe Serverstatus, zentrale Datenbank, Erinnerungsdaten und erstelle bei Bedarf ein manuelles Backup.
+        </p>
+        <div className="button-grid compact">
+          <button className="primary-button" onClick={createBackupNow}>
+            <Database size={19} /> Backup erstellen
+          </button>
+          <button className="secondary-button" onClick={() => loadStatus()}>
+            <RefreshCw size={19} /> Neu prüfen
+          </button>
+        </div>
+        {message ? <p className="success-message">{message}</p> : null}
+      </section>
+
+      {status ? (
+        <>
+          <section className="panel">
+            <div className="panel-title">
+              <Database size={24} />
+              <h1>Daten</h1>
+            </div>
+            <dl className="admin-list">
+              <dt>Datenbank</dt>
+              <dd>{status.databaseAvailable ? "bereit" : "fehlt"}</dd>
+              <dt>Speicherort</dt>
+              <dd>{status.databaseFile}</dd>
+              <dt>Backups</dt>
+              <dd>{status.backupsDir}</dd>
+              <dt>Zuletzt geändert</dt>
+              <dd>{status.updatedAt || "noch nicht gespeichert"}</dd>
+            </dl>
+          </section>
+          <section className="panel">
+            <div className="panel-title">
+              <BarChart3 size={24} />
+              <h1>Inhalte</h1>
+            </div>
+            <dl className="admin-list">
+              <dt>Kinder</dt>
+              <dd>{status.counts.children}</dd>
+              <dt>Eltern/Bezugspersonen</dt>
+              <dd>{status.counts.parents}</dd>
+              <dt>Zeugnisse</dt>
+              <dd>{status.counts.certificates}</dd>
+              <dt>SMTP</dt>
+              <dd>{status.smtpConfigured ? "konfiguriert" : "nicht konfiguriert"}</dd>
+            </dl>
+          </section>
+        </>
+      ) : null}
+    </section>
   );
 }
 

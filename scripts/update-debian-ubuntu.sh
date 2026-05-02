@@ -30,6 +30,11 @@ check_installation() {
   [[ -d "${APP_DIR}/.git" ]] || fail "${APP_DIR} ist kein Git-Checkout. Bitte zuerst install-debian-ubuntu.sh ausführen."
   command -v systemctl >/dev/null || fail "systemd wurde nicht gefunden."
   command -v npm >/dev/null || fail "npm wurde nicht gefunden."
+  if ! command -v sqlite3 >/dev/null; then
+    log "SQLite installieren"
+    apt-get update
+    apt-get install -y sqlite3
+  fi
 }
 
 runtime_user() {

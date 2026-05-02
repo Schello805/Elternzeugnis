@@ -217,6 +217,29 @@ main {
   gap: 22px;
 }
 
+.setup-strip {
+  align-items: center;
+  background: #fffdf7;
+  border: 1px solid #ded3bf;
+  border-left: 6px solid #24594c;
+  border-radius: 8px;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 16px;
+}
+
+.setup-strip strong,
+.setup-strip span {
+  display: block;
+}
+
+.setup-strip span {
+  color: #68746f;
+  line-height: 1.45;
+  margin-top: 4px;
+}
+
 .dashboard-hero {
   background:
     linear-gradient(110deg, rgba(36, 89, 76, 0.95), rgba(198, 93, 59, 0.9)),
@@ -343,6 +366,13 @@ main {
   font-size: 1.1rem;
   line-height: 1.55;
   margin: 8px 0 0;
+}
+
+.child-question small {
+  color: #5c6b66;
+  display: block;
+  font-weight: 850;
+  margin-top: 10px;
 }
 
 .big-grade-grid {
@@ -1011,6 +1041,48 @@ textarea {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.insight-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+.insight-grid article {
+  background: #edf6f2;
+  border: 1px solid #c5dbd1;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.insight-grid strong,
+.insight-grid span {
+  display: block;
+}
+
+.insight-grid span {
+  color: #3d514b;
+  line-height: 1.5;
+  margin-top: 5px;
+}
+
+.admin-list {
+  display: grid;
+  gap: 9px;
+  grid-template-columns: minmax(130px, auto) minmax(0, 1fr);
+  margin: 0;
+}
+
+.admin-list dt {
+  color: #68746f;
+  font-weight: 850;
+}
+
+.admin-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .wide-panel {
   grid-column: 1 / -1;
 }
@@ -1279,8 +1351,14 @@ textarea {
 
   .form-grid,
   .chart-grid,
+  .insight-grid,
   .certificate-fields {
     grid-template-columns: 1fr;
+  }
+
+  .setup-strip {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .certificate-sheet.design-rainbow .grade-table,

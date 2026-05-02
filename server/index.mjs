@@ -3,19 +3,25 @@ import express from "express";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import { existsSync, readFileSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const packageFile = resolve(root, "package.json");
-const appDataFile = resolve(root, "data/app-data.json");
+const dataDir = resolve(root, "data");
+const legacyAppDataFile = resolve(dataDir, "app-data.json");
+const databaseFile = resolve(dataDir, "elternzeugnis.sqlite");
+const backupsDir = resolve(dataDir, "backups");
 const remindersFile = resolve(root, "data/reminders.json");
 const envFile = resolve(root, ".env");
 const distDir = resolve(root, "dist");
 const indexFile = resolve(distDir, "index.html");
 const app = express();
+const execFileAsync = promisify(execFile);
 
 dotenv.config({ path: envFile });
 const port = Number(process.env.PORT || 4174);
@@ -43,6 +49,27 @@ function validEmail(email) {
   return typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+function sqlEscape(value) {
+  return String(value).replaceAll("'", "''");
+}
+
+async function sqlite(sql) {
+  await mkdir(dataDir, { recursive: true });
+  const { stdout } = await execFileAsync("sqlite3", [databaseFile, sql], { maxBuffer: 1024 * 1024 * 20 });
+  return stdout.trim();
+}
+
+async function initDatabase() {
+  await sqlite(`
+    PRAGMA journal_mode=WAL;
+    CREATE TABLE IF NOT EXISTS app_state (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+  `);
+}
+
 const defaultGrades = {
   geduld: 2,
   zuhoren: 2,
@@ -54,12 +81,19 @@ const defaultGrades = {
   versoehnen: 2,
 };
 
+function calendarYear(value, date = new Date().toISOString().slice(0, 10)) {
+  const text = String(value || "");
+  if (/^\d{4}$/.test(text)) return text;
+  const parsed = new Date(`${date}T00:00:00`);
+  return String(Number.isNaN(parsed.getTime()) ? new Date().getFullYear() : parsed.getFullYear());
+}
+
 function newCertificate(childId = "child-1", parentId = "parent-1") {
   return {
     id: crypto.randomUUID(),
     childId,
     parentId,
-    year: "2025/2026",
+    year: String(new Date().getFullYear()),
     date: new Date().toISOString().slice(0, 10),
     grades: { ...defaultGrades },
     strengths: "",
@@ -72,6 +106,7 @@ function newCertificate(childId = "child-1", parentId = "parent-1") {
 }
 
 function initialAppData() {
+  const now = new Date().toISOString();
   return {
     children: [{ id: "child-1", name: "Kind" }],
     parents: [
@@ -80,6 +115,11 @@ function initialAppData() {
     ],
     draft: newCertificate(),
     certificates: [],
+    meta: {
+      updatedAt: now,
+      revision: crypto.randomUUID(),
+      setupComplete: false,
+    },
   };
 }
 
@@ -87,32 +127,95 @@ function normalizeAppData(value) {
   const initial = initialAppData();
   const data = value && typeof value === "object" ? value : {};
   const draft = data.draft && typeof data.draft === "object" ? data.draft : initial.draft;
+  const now = new Date().toISOString();
   return {
-    children: Array.isArray(data.children) && data.children.length ? data.children : initial.children,
-    parents: Array.isArray(data.parents) && data.parents.length ? data.parents : initial.parents,
+    children: Array.isArray(data.children) && data.children.length
+      ? data.children.map((person) => ({ id: person.id, name: person.name, email: person.email || "", birthDate: person.birthDate || "" }))
+      : initial.children,
+    parents: Array.isArray(data.parents) && data.parents.length
+      ? data.parents.map((person) => ({ id: person.id, name: person.name, email: person.email || "", birthDate: person.birthDate || "" }))
+      : initial.parents,
     draft: {
       ...initial.draft,
       ...draft,
       grades: { ...defaultGrades, ...(draft.grades || {}) },
       design: ["classic", "rainbow", "forest", "space"].includes(draft.design) ? draft.design : "classic",
+      year: calendarYear(draft.year, draft.date),
     },
-    certificates: Array.isArray(data.certificates) ? data.certificates : [],
+    certificates: Array.isArray(data.certificates)
+      ? data.certificates.map((certificate) => ({
+          ...certificate,
+          year: calendarYear(certificate.year, certificate.date || certificate.createdAt),
+          favorite: Boolean(certificate.favorite),
+        }))
+      : [],
+    meta: {
+      updatedAt: data.meta?.updatedAt || now,
+      revision: data.meta?.revision || crypto.randomUUID(),
+      setupComplete: Boolean(data.meta?.setupComplete),
+    },
   };
 }
 
 async function readAppData() {
+  await initDatabase();
   try {
-    return normalizeAppData(JSON.parse(await readFile(appDataFile, "utf8")));
+    const row = await sqlite("SELECT value FROM app_state WHERE key='app_data';");
+    if (row) return normalizeAppData(JSON.parse(row));
+    if (existsSync(legacyAppDataFile)) {
+      const migrated = await writeAppData(JSON.parse(await readFile(legacyAppDataFile, "utf8")), { force: true });
+      return migrated.data;
+    }
   } catch {
-    return initialAppData();
+    // Fall through to initial data.
   }
+  return initialAppData();
 }
 
-async function writeAppData(data) {
+async function writeAppData(data, options = {}) {
+  await initDatabase();
+  const current = options.force ? null : await readAppData();
+  const clientUpdatedAt = data?.meta?.updatedAt || "";
+
+  if (!options.force && current?.meta?.updatedAt && clientUpdatedAt && current.meta.updatedAt !== clientUpdatedAt) {
+    return { conflict: true, data: current };
+  }
+
   const normalized = normalizeAppData(data);
-  await mkdir(dirname(appDataFile), { recursive: true });
-  await writeFile(appDataFile, JSON.stringify(normalized, null, 2));
-  return normalized;
+  normalized.meta = {
+    ...normalized.meta,
+    updatedAt: new Date().toISOString(),
+    revision: crypto.randomUUID(),
+  };
+  const compact = JSON.stringify(normalized);
+  await sqlite(
+    `INSERT INTO app_state (key, value, updated_at)
+     VALUES ('app_data', '${sqlEscape(compact)}', '${normalized.meta.updatedAt}')
+     ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at;`,
+  );
+  return { conflict: false, data: normalized };
+}
+
+function backupStamp() {
+  return new Date().toISOString().replaceAll(":", "-").replace(/\.\d{3}Z$/, "Z");
+}
+
+async function createBackup(reason = "manual") {
+  await initDatabase();
+  await mkdir(backupsDir, { recursive: true });
+  const stamp = backupStamp();
+  const files = [];
+  if (existsSync(databaseFile)) {
+    const target = resolve(backupsDir, `elternzeugnis-${stamp}-${reason}.sqlite`);
+    await copyFile(databaseFile, target);
+    files.push(target);
+  }
+  if (existsSync(remindersFile)) {
+    const target = resolve(backupsDir, `reminders-${stamp}-${reason}.json`);
+    await copyFile(remindersFile, target);
+    files.push(target);
+  }
+  return { createdAt: new Date().toISOString(), files };
 }
 
 function smtpConfig() {
@@ -262,7 +365,7 @@ app.get("/api/health", (_request, response) => {
     host,
     port,
     distAvailable: existsSync(indexFile),
-    appDataAvailable: existsSync(appDataFile),
+    databaseAvailable: existsSync(databaseFile),
     smtpConfigured: smtpConfigured(),
     time: new Date().toISOString(),
   });
@@ -273,7 +376,38 @@ app.get("/api/app-data", async (_request, response) => {
 });
 
 app.put("/api/app-data", async (request, response) => {
-  response.json(await writeAppData(request.body || {}));
+  const result = await writeAppData(request.body || {}, { force: request.query.force === "true" });
+  if (result.conflict) {
+    response.status(409).json({ error: "Die Daten wurden inzwischen auf einem anderen Gerät geändert.", data: result.data });
+    return;
+  }
+  response.json(result.data);
+});
+
+app.get("/api/admin/status", async (_request, response) => {
+  const data = await readAppData();
+  response.json({
+    ok: true,
+    version: appVersion(),
+    host,
+    port,
+    databaseFile,
+    databaseAvailable: existsSync(databaseFile),
+    remindersFile,
+    remindersAvailable: existsSync(remindersFile),
+    backupsDir,
+    counts: {
+      children: data.children.length,
+      parents: data.parents.length,
+      certificates: data.certificates.length,
+    },
+    updatedAt: data.meta?.updatedAt || null,
+    smtpConfigured: smtpConfigured(),
+  });
+});
+
+app.post("/api/admin/backup", async (request, response) => {
+  response.status(201).json(await createBackup(String(request.body?.reason || "manual")));
 });
 
 app.get("/api/smtp/config", (_request, response) => {
@@ -352,6 +486,12 @@ if (existsSync(indexFile)) {
 cron.schedule("* * * * *", () => {
   processDueReminders().catch((error) => {
     console.error("Reminder processing failed", error);
+  });
+});
+
+cron.schedule("0 3 * * *", () => {
+  createBackup("daily").catch((error) => {
+    console.error("Daily backup failed", error);
   });
 });
 
