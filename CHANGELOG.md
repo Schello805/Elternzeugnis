@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.19
+
+- Erinnerungsmails als gestaltete HTML-Mails ergänzt
+- Pädagogischen Hinweis, Gesprächsimpulse und App-Button in die Mail aufgenommen
+- Plaintext-Fallback für einfache Mailclients beibehalten
+- Versionsnummer erhöht
+
 ## 0.1.18
 
 - Unterschrift-Textfeld durch echtes Zeichenfeld ersetzt

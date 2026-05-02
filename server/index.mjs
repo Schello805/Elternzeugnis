@@ -304,14 +304,74 @@ function nextDueDate(reminder, from = new Date()) {
 function reminderMail(reminder) {
   const child = reminder.childName || "ein Kind";
   const recipient = reminder.recipientName || "die Eltern";
+  const appUrl = process.env.APP_URL || "http://127.0.0.1:5173";
+  const subject = `Zeit für ein Elternzeugnis von ${child}`;
+  const intro = `Heute ist ein guter Moment, damit ${child} ein Elternzeugnis für ${recipient} ausfüllt.`;
+  const pedagogicNote =
+    "Eine Note ist kein Urteil. Sie ist ein Gesprächsanlass und zeigt, wo ein Kind Nähe, Aufmerksamkeit, Humor oder Unterstützung braucht.";
+
   return {
-    subject: `Erinnerung: Zeit für das Elternzeugnis von ${child}`,
+    subject,
     text:
-      `Hallo,\n\nheute ist ein guter Zeitpunkt, damit ${child} ein Elternzeugnis für ${recipient} ausfüllt.\n\n` +
-      "Pädagogischer Gedanke: Erst Stärken sehen, dann zuhören, dann Wünsche freundlich formulieren. Eine schlechte Note ist kein Urteil, sondern ein Hinweis auf ein Bedürfnis.\n\n" +
-      "Nehmt euch danach ein paar ruhige Minuten: Was war schön? Was braucht mehr Aufmerksamkeit? Was ist ein kleiner nächster Schritt?\n\n" +
-      `App öffnen: ${process.env.APP_URL || "http://127.0.0.1:5173"}\n\n` +
+      `Hallo,\n\n${intro}\n\n` +
+      `Pädagogischer Gedanke: ${pedagogicNote}\n\n` +
+      "Für danach:\n" +
+      "1. Was war schön und soll bleiben?\n" +
+      "2. Wo braucht das Kind mehr Unterstützung?\n" +
+      "3. Was ist ein kleiner nächster Schritt für diese Woche?\n\n" +
+      `App öffnen: ${appUrl}\n\n` +
       "Viele Grüße\nElternzeugnis",
+    html: `<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${subject}</title>
+  </head>
+  <body style="margin:0;background:#f5f1e8;color:#18211f;font-family:Inter,Segoe UI,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f1e8;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#fffdf7;border:1px solid #ded3bf;border-radius:14px;overflow:hidden;box-shadow:0 14px 36px rgba(67,52,31,.10);">
+            <tr>
+              <td style="background:#24594c;padding:26px 28px;color:#fffaf0;">
+                <div style="font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#f7d58a;">Elternzeugnis</div>
+                <h1 style="margin:8px 0 0;font-size:28px;line-height:1.15;">Zeit für ein kleines Familiengespräch</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px;">
+                <p style="font-size:18px;line-height:1.55;margin:0 0 18px;">${intro}</p>
+                <div style="background:#edf6f2;border:1px solid #c5dbd1;border-radius:10px;padding:16px 18px;margin:0 0 22px;">
+                  <strong style="display:block;color:#24594c;margin-bottom:6px;">Pädagogischer Gedanke</strong>
+                  <span style="line-height:1.55;color:#21483f;">${pedagogicNote}</span>
+                </div>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 24px;">
+                  <tr>
+                    <td style="padding:10px 0;border-bottom:1px solid #eadfcb;"><strong>1.</strong> Was war schön und soll bleiben?</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:10px 0;border-bottom:1px solid #eadfcb;"><strong>2.</strong> Wo braucht ${child} mehr Unterstützung?</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:10px 0;"><strong>3.</strong> Was ist ein kleiner nächster Schritt für diese Woche?</td>
+                  </tr>
+                </table>
+                <a href="${appUrl}" style="display:inline-block;background:#24594c;color:#ffffff;text-decoration:none;font-weight:800;border-radius:10px;padding:14px 18px;">Elternzeugnis öffnen</a>
+                <p style="color:#68746f;font-size:13px;line-height:1.5;margin:22px 0 0;">Falls der Button nicht funktioniert, öffne diese Adresse im lokalen Netzwerk:<br><span style="color:#24594c;">${appUrl}</span></p>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#18211f;color:#bdc9c4;padding:16px 28px;font-size:13px;">
+                Diese Erinnerung gehört zu eurem lokalen Elternzeugnis-Ritual.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`,
   };
 }
 
@@ -326,6 +386,7 @@ async function sendReminder(reminder) {
       to: reminder.email,
       subject: mail.subject,
       text: mail.text,
+      html: mail.html,
     });
     return { ok: true };
   } catch (error) {
