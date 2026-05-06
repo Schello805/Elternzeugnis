@@ -9,6 +9,7 @@ import {
   FileText,
   Github,
   HeartHandshake,
+  Lock,
   Mail,
   Pencil,
   Plus,
@@ -41,8 +42,9 @@ import { appBranch, appBuildTime, appRevision, appVersion } from "./generated/ve
 
 const githubUrl = "https://github.com/Schello805/Elternzeugnis";
 const storageKey = "elternzeugnis:v2";
+const authTokenKey = "elternzeugnis:auth-token";
 
-type View = "home" | "certificate" | "child" | "people" | "history" | "reminders" | "admin";
+type View = "certificate" | "child" | "people" | "history" | "reminders" | "admin";
 type Frequency = "once" | "monthly" | "yearly";
 type Design = "classic" | "rainbow" | "forest" | "space";
 
@@ -100,6 +102,40 @@ type AppData = {
     setupComplete?: boolean;
   };
 };
+
+function isSetupComplete(data: AppData) {
+  return (
+    data.children.length > 0 &&
+    data.parents.length > 0 &&
+    data.children.every((person) => person.name.trim() && person.name !== "Kind" && person.birthDate) &&
+    data.parents.every((person) => person.name.trim() && person.name !== "Elternteil") &&
+    Boolean(data.meta?.setupComplete)
+  );
+}
+
+function getAuthToken() {
+  return sessionStorage.getItem(authTokenKey) || "";
+}
+
+function setAuthToken(token: string) {
+  if (!token) {
+    sessionStorage.removeItem(authTokenKey);
+    return;
+  }
+  sessionStorage.setItem(authTokenKey, token);
+}
+
+async function apiFetch(input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) {
+  const headers = new Headers(init?.headers);
+  const token = getAuthToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const response = await fetch(input, { ...init, headers });
+  if (response.status === 401) {
+    setAuthToken("");
+    window.dispatchEvent(new Event("auth:required"));
+  }
+  return response;
+}
 
 type SmtpConfig = {
   host: string;
@@ -434,7 +470,7 @@ function isInitialServerData(data: AppData) {
 }
 
 async function saveAppData(data: AppData) {
-  const response = await fetch("/api/app-data", {
+  const response = await apiFetch("/api/app-data", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -451,13 +487,52 @@ async function saveAppData(data: AppData) {
 
 export function App() {
   const [data, setData] = useState<AppData>(loadLocalData);
-  const [view, setView] = useState<View>("home");
+  const [view, setView] = useState<View>("certificate");
   const [serverLoaded, setServerLoaded] = useState(false);
   const [syncState, setSyncState] = useState<SyncState>("lade");
   const [syncMessage, setSyncMessage] = useState("");
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authRequired, setAuthRequired] = useState(false);
+  const [authToken, setAuthTokenState] = useState(() => getAuthToken());
   const dataRef = useRef(data);
   const lastChangeAt = useRef(Date.now());
   const skipNextSave = useRef(false);
+
+  useEffect(() => {
+    const handler = () => {
+      setAuthTokenState("");
+      setAuthRequired(true);
+    };
+    window.addEventListener("auth:required", handler);
+    return () => window.removeEventListener("auth:required", handler);
+  }, []);
+
+  useEffect(() => {
+    apiFetch("/api/auth/status")
+      .then((response) => response.json() as Promise<{ requiresPin: boolean }>)
+      .then((status) => {
+        setAuthRequired(Boolean(status.requiresPin));
+      })
+      .catch(() => {
+        setAuthRequired(false);
+      })
+      .finally(() => setAuthChecked(true));
+  }, []);
+
+  const loginWithPin = async (pin: string) => {
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin }),
+    });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(payload?.error || "PIN ist falsch.");
+    }
+    const payload = (await response.json()) as { token: string };
+    setAuthToken(payload.token);
+    setAuthTokenState(payload.token);
+  };
 
   useEffect(() => {
     dataRef.current = data;
@@ -468,7 +543,7 @@ export function App() {
     let active = true;
     const localData = loadLocalData();
 
-    fetch("/api/app-data")
+    apiFetch("/api/app-data")
       .then((response) => {
         if (!response.ok) throw new Error("Serverdaten konnten nicht geladen werden.");
         return response.json() as Promise<Partial<AppData>>;
@@ -538,7 +613,7 @@ export function App() {
     const refreshFromServer = async () => {
       if (Date.now() - lastChangeAt.current < 2500) return;
       try {
-        const response = await fetch("/api/app-data");
+        const response = await apiFetch("/api/app-data");
         if (!response.ok) throw new Error("Serverdaten konnten nicht geladen werden.");
         const serverData = normalizeData((await response.json()) as Partial<AppData>);
         if (JSON.stringify(serverData) !== JSON.stringify(dataRef.current)) {
@@ -566,6 +641,10 @@ export function App() {
       document.removeEventListener("visibilitychange", refreshOnVisible);
     };
   }, [serverLoaded]);
+
+  if (authChecked && authRequired && !authToken) {
+    return <PinGate onLogin={loginWithPin} />;
+  }
 
   return (
     <div className="app-shell">
@@ -618,7 +697,6 @@ function Header({
         </nav>
       </div>
       <nav className="module-tabs header-tabs" aria-label="Arbeitsbereiche">
-        <Tab active={view === "home"} onClick={() => setView("home")} icon={<Star size={19} />} label="Start" />
         <Tab active={view === "child"} onClick={() => setView("child")} icon={<Pencil size={19} />} label="Kindermodus" />
         <Tab active={view === "certificate"} onClick={() => setView("certificate")} icon={<BookOpen size={19} />} label="Zeugnis" />
         <Tab active={view === "people"} onClick={() => setView("people")} icon={<UsersRound size={19} />} label="Stammdaten" />
@@ -641,9 +719,21 @@ function AppWorkspace({
   view: View;
   setView: (view: View) => void;
 }) {
+  const setupDone = isSetupComplete(data);
   return (
     <div className="app-workspace">
-      {view === "home" ? <Dashboard data={data} setView={setView} /> : null}
+      {!setupDone && view !== "people" ? (
+        <div className="setup-strip">
+          <div>
+            <p className="eyebrow">Einrichtung</p>
+            <strong>Stammdaten vervollständigen</strong>
+            <span>Trage Kindernamen und Geburtsdaten ein, damit Texte altersgerecht formuliert werden.</span>
+          </div>
+          <button className="primary-button" onClick={() => setView("people")}>
+            <UsersRound size={19} /> Einrichten
+          </button>
+        </div>
+      ) : null}
       {view === "child" ? <ChildModeScreen data={data} setData={setData} setView={setView} /> : null}
       {view === "certificate" ? <CertificateScreen data={data} setData={setData} /> : null}
       {view === "people" ? <PeopleScreen data={data} setData={setData} /> : null}
@@ -670,73 +760,6 @@ function Tab({
       {icon}
       {label}
     </button>
-  );
-}
-
-function Dashboard({ data, setView }: { data: AppData; setView: (view: View) => void }) {
-  const lastCertificate = data.certificates[0];
-  const draftHasText = Boolean(
-    data.draft.strengths || data.draft.wishes || data.draft.favoriteMoment || data.draft.signature,
-  );
-  const needsSetup =
-    !data.meta?.setupComplete ||
-    data.children.some((person) => !person.birthDate) ||
-    data.children.some((person) => person.name === "Kind");
-
-  return (
-    <section className="dashboard">
-      {needsSetup ? (
-        <div className="setup-strip">
-          <div>
-            <p className="eyebrow">Einrichtung</p>
-            <strong>Stammdaten vervollständigen</strong>
-            <span>Geburtsdatum der Kinder eintragen, damit Fragen und Wunschbausteine altersgerecht formuliert werden.</span>
-          </div>
-          <button className="primary-button" onClick={() => setView("people")}>
-            <UsersRound size={19} /> Einrichten
-          </button>
-        </div>
-      ) : null}
-      <div className="dashboard-hero">
-        <p className="eyebrow">Familien-App</p>
-        <h1>Ein liebevolles Ritual für Beziehung, Mut und echte Gespräche</h1>
-        <p>
-          Kinder lernen, ihre Bedürfnisse wertschätzend auszudrücken. Eltern bekommen kein Urteil,
-          sondern eine Einladung zum Zuhören, Nachfragen und gemeinsamen Wachsen.
-        </p>
-        <div className="hero-actions">
-          <button className="primary-button" onClick={() => setView("child")}>
-            <Pencil size={19} /> Kindermodus starten
-          </button>
-          <button className="secondary-button" onClick={() => setView("certificate")}>
-            <BookOpen size={19} /> Zeugnis bearbeiten
-          </button>
-        </div>
-      </div>
-
-      <div className="dashboard-cards">
-        <button className="dashboard-card" onClick={() => setView("child")}>
-          <Pencil size={25} />
-          <strong>Neues Zeugnis</strong>
-          <span>Kindgerecht ausfüllen, ohne Druck und ohne Ablenkung.</span>
-        </button>
-        <button className="dashboard-card" onClick={() => setView(draftHasText ? "certificate" : "people")}>
-          <FileText size={25} />
-          <strong>{draftHasText ? "Entwurf fortsetzen" : "Stammdaten anlegen"}</strong>
-          <span>{draftHasText ? "Gedanken in Ruhe fertig formulieren." : "Namen vorbereiten, damit Kinder leicht starten."}</span>
-        </button>
-        <button className="dashboard-card" onClick={() => setView("history")}>
-          <BarChart3 size={25} />
-          <strong>{data.certificates.length} gespeicherte Zeugnisse</strong>
-          <span>{lastCertificate ? `Zuletzt: Kalenderjahr ${lastCertificate.year}` : "Entwicklung über die Jahre sichtbar machen."}</span>
-        </button>
-        <button className="dashboard-card" onClick={() => setView("reminders")}>
-          <CalendarClock size={25} />
-          <strong>Erinnerungen</strong>
-          <span>Das Ritual regelmäßig und verlässlich in den Familienalltag holen.</span>
-        </button>
-      </div>
-    </section>
   );
 }
 
@@ -1096,6 +1119,22 @@ function CertificateScreen({
       <aside className="side-panel no-print">
         <p className="eyebrow">Eingabe</p>
         <h1>Wünsche, Stärken und Momente festhalten</h1>
+        <div className="button-grid compact">
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() => document.querySelector(".certificate-fields")?.scrollIntoView({ behavior: "smooth" })}
+          >
+            <FileText size={19} /> Texte
+          </button>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() => document.querySelector(".signature-field")?.scrollIntoView({ behavior: "smooth" })}
+          >
+            <Pencil size={19} /> Unterschrift
+          </button>
+        </div>
         <label>
           Kind
           <select value={data.draft.childId} onChange={(event) => updateDraft("childId", event.target.value)}>
@@ -1464,6 +1503,11 @@ function HistoryScreen({
   setData: Dispatch<SetStateAction<AppData>>;
   setView: (view: View) => void;
 }) {
+  const [search, setSearch] = useState("");
+  const [childFilter, setChildFilter] = useState("all");
+  const [parentFilter, setParentFilter] = useState("all");
+  const [favoriteOnly, setFavoriteOnly] = useState(false);
+
   const analytics = useMemo(() => {
     return data.certificates
       .map((certificate) => {
@@ -1475,6 +1519,20 @@ function HistoryScreen({
       })
       .reverse();
   }, [data]);
+
+  const filteredAnalytics = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return analytics.filter((certificate) => {
+      if (favoriteOnly && !certificate.favorite) return false;
+      if (childFilter !== "all" && certificate.childId !== childFilter) return false;
+      if (parentFilter !== "all" && certificate.parentId !== parentFilter) return false;
+      if (!term) return true;
+      const haystack = `${certificate.year} ${certificate.child} ${certificate.parent} ${certificate.strengths || ""} ${certificate.wishes || ""} ${
+        certificate.favoriteMoment || ""
+      }`.toLowerCase();
+      return haystack.includes(term);
+    });
+  }, [analytics, childFilter, favoriteOnly, parentFilter, search]);
 
   const categoryAverages = categories.map((category) => {
     const values = data.certificates.map((certificate) => certificate.grades[category.id]).filter(Boolean);
@@ -1511,6 +1569,38 @@ function HistoryScreen({
         <div className="panel-title">
           <BarChart3 size={25} />
           <h1>Verlauf und Auswertung</h1>
+        </div>
+        <div className="form-grid">
+          <label>
+            Suche
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Jahr, Name, Text ..." />
+          </label>
+          <label>
+            Kind
+            <select value={childFilter} onChange={(event) => setChildFilter(event.target.value)}>
+              <option value="all">alle</option>
+              {data.children.map((person) => (
+                <option key={person.id} value={person.id}>
+                  {person.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Elternteil
+            <select value={parentFilter} onChange={(event) => setParentFilter(event.target.value)}>
+              <option value="all">alle</option>
+              {data.parents.map((person) => (
+                <option key={person.id} value={person.id}>
+                  {person.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="checkbox-label">
+            <input type="checkbox" checked={favoriteOnly} onChange={(event) => setFavoriteOnly(event.target.checked)} />
+            Nur wichtige
+          </label>
         </div>
         {data.certificates.length ? (
           <>
@@ -1569,7 +1659,7 @@ function HistoryScreen({
       </div>
 
       <div className="timeline">
-        {analytics
+        {filteredAnalytics
           .slice()
           .reverse()
           .map((certificate) => (
@@ -1611,19 +1701,66 @@ function ChartCard({ title, children }: { title: string; children: ReactElement 
 function AdminScreen() {
   const [status, setStatus] = useState<AdminStatus | null>(null);
   const [message, setMessage] = useState("");
+  const [pinEnabled, setPinEnabled] = useState(false);
+  const [pinDraft, setPinDraft] = useState("");
+  const [pinBusy, setPinBusy] = useState(false);
 
   const loadStatus = async () => {
-    const response = await fetch("/api/admin/status");
+    const response = await apiFetch("/api/admin/status");
     if (!response.ok) throw new Error("Adminstatus konnte nicht geladen werden.");
     setStatus((await response.json()) as AdminStatus);
   };
 
+  const loadConfig = async () => {
+    const response = await apiFetch("/api/admin/config");
+    if (!response.ok) throw new Error("Admin-Konfiguration konnte nicht geladen werden.");
+    const config = (await response.json()) as { familyPinEnabled: boolean };
+    setPinEnabled(Boolean(config.familyPinEnabled));
+  };
+
   useEffect(() => {
-    loadStatus().catch(() => setMessage("Admin-API ist nicht erreichbar."));
+    Promise.all([loadStatus(), loadConfig()]).catch(() => setMessage("Admin-API ist nicht erreichbar."));
   }, []);
 
+  const savePin = async () => {
+    setPinBusy(true);
+    try {
+      const response = await apiFetch("/api/admin/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ familyPin: pinDraft }),
+      });
+      const result = (await response.json().catch(() => ({}))) as { familyPinEnabled?: boolean; error?: string };
+      setMessage(response.ok ? "Familien-PIN wurde gespeichert." : result.error || "PIN konnte nicht gespeichert werden.");
+      setPinDraft("");
+      await loadConfig();
+    } catch {
+      setMessage("PIN konnte nicht gespeichert werden. Bitte prüfen, ob der Server läuft.");
+    } finally {
+      setPinBusy(false);
+    }
+  };
+
+  const disablePin = async () => {
+    setPinBusy(true);
+    try {
+      const response = await apiFetch("/api/admin/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ familyPin: "" }),
+      });
+      setMessage(response.ok ? "Familien-PIN wurde deaktiviert." : "PIN konnte nicht deaktiviert werden.");
+      setPinDraft("");
+      await loadConfig();
+    } catch {
+      setMessage("PIN konnte nicht deaktiviert werden. Bitte prüfen, ob der Server läuft.");
+    } finally {
+      setPinBusy(false);
+    }
+  };
+
   const createBackupNow = async () => {
-    const response = await fetch("/api/admin/backup", {
+    const response = await apiFetch("/api/admin/backup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reason: "manual" }),
@@ -1635,10 +1772,36 @@ function AdminScreen() {
 
   return (
     <section className="page-grid">
+      <section className="panel">
+        <div className="panel-title">
+          <Lock size={25} />
+          <h1>Familien-PIN</h1>
+        </div>
+        <p className="empty-state">
+          Damit die App im Heimnetz nicht offen herumsteht, kannst du hier eine PIN aktivieren oder ändern.
+        </p>
+        <div className={pinEnabled ? "status ok" : "status warn"}>
+          <Lock size={18} /> {pinEnabled ? "PIN ist aktiv" : "PIN ist deaktiviert"}
+        </div>
+        <div className="form-grid">
+          <label>
+            Neue PIN
+            <input value={pinDraft} onChange={(event) => setPinDraft(event.target.value)} inputMode="numeric" type="password" />
+          </label>
+        </div>
+        <div className="button-grid compact">
+          <button className="primary-button" onClick={savePin} disabled={pinBusy || !pinDraft}>
+            <Save size={19} /> Speichern
+          </button>
+          <button className="secondary-button" onClick={disablePin} disabled={pinBusy || !pinEnabled}>
+            <Trash2 size={19} /> Deaktivieren
+          </button>
+        </div>
+      </section>
       <section className="panel wide-panel">
         <div className="panel-title">
-          <Settings size={25} />
-          <h1>Admin und Wartung</h1>
+          <Database size={25} />
+          <h1>Systemstatus</h1>
         </div>
         <p className="empty-state">
           Prüfe Serverstatus, zentrale Datenbank, Erinnerungsdaten und erstelle bei Bedarf ein manuelles Backup.
@@ -1735,8 +1898,8 @@ function ReminderScreen({ data }: { data: AppData }) {
 
   const loadReminders = async () => {
     const [statusResponse, remindersResponse] = await Promise.all([
-      fetch("/api/reminders/status"),
-      fetch("/api/reminders"),
+      apiFetch("/api/reminders/status"),
+      apiFetch("/api/reminders"),
     ]);
     const status = await statusResponse.json();
     setSmtpReady(status.smtpConfigured);
@@ -1744,7 +1907,7 @@ function ReminderScreen({ data }: { data: AppData }) {
   };
 
   const loadSmtpConfig = async () => {
-    const response = await fetch("/api/smtp/config");
+    const response = await apiFetch("/api/smtp/config");
     const config = await response.json();
     setSmtpConfig({ ...config, pass: "" });
     setSmtpReady(Boolean(config.configured));
@@ -1757,56 +1920,29 @@ function ReminderScreen({ data }: { data: AppData }) {
   const selectedChild = data.children.find((person) => person.id === form.childId) || firstChild;
   const selectedParent = data.parents.find((person) => person.id === form.parentId) || firstParent;
 
-  const saveReminder = async () => {
-    if (!isValidEmail(form.email)) {
-      setMessage("Bitte eine gültige E-Mail-Adresse eintragen.");
-      return;
-    }
-    const response = await fetch("/api/reminders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        childName: selectedChild?.name,
-        recipientName: selectedParent?.name,
-        email: form.email,
-        date: form.date,
-        time: form.time,
-        frequency: form.frequency,
-      }),
-    });
-    const result = await readApiJson(response);
-    setMessage(
-      response.ok
-        ? "Erinnerung gespeichert. Das Ritual bekommt einen festen Platz."
-        : result.error || "Erinnerung konnte nicht gespeichert werden.",
-    );
-    await loadReminders();
-  };
-
-  const deleteReminder = async (id: string) => {
-    await fetch(`/api/reminders/${id}`, { method: "DELETE" });
-    await loadReminders();
-  };
-
   const saveSmtpConfig = async () => {
-    const response = await fetch("/api/smtp/config", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(smtpConfig),
-    });
-    const config = await response.json();
-    setSmtpConfig({ ...config, pass: "" });
-    setSmtpReady(Boolean(config.configured));
-    setSmtpMessage(response.ok ? "SMTP-Konfiguration gespeichert." : "SMTP-Konfiguration konnte nicht gespeichert werden.");
+    try {
+      const response = await apiFetch("/api/smtp/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(smtpConfig),
+      });
+      const result = await readApiJson(response);
+      setSmtpMessage(response.ok ? "SMTP wurde gespeichert." : result.error || "SMTP konnte nicht gespeichert werden.");
+      await loadSmtpConfig();
+      await loadReminders();
+    } catch {
+      setSmtpMessage("SMTP konnte nicht gespeichert werden. Bitte prüfen, ob der Server läuft.");
+    }
   };
 
   const sendTestMail = async () => {
     if (!isValidEmail(form.email)) {
-      setSmtpMessage("Bitte zuerst eine gültige E-Mail-Adresse für den Test eintragen.");
+      setSmtpMessage("Bitte eine gültige E-Mail-Adresse eintragen.");
       return;
     }
     try {
-      const response = await fetch("/api/reminders/test", {
+      const response = await apiFetch("/api/reminders/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1817,8 +1953,45 @@ function ReminderScreen({ data }: { data: AppData }) {
       });
       const result = await readApiJson(response);
       setSmtpMessage(response.ok ? "Testmail wurde versendet." : result.error || "Testmail konnte nicht versendet werden.");
+      await loadReminders();
     } catch {
       setSmtpMessage("Testmail konnte nicht versendet werden. Bitte prüfen, ob der Server läuft.");
+    }
+  };
+
+  const saveReminder = async () => {
+    if (!isValidEmail(form.email)) {
+      setMessage("Bitte eine gültige E-Mail-Adresse eintragen.");
+      return;
+    }
+    try {
+      const response = await apiFetch("/api/reminders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          childName: selectedChild?.name,
+          recipientName: selectedParent?.name,
+          email: form.email,
+          date: form.date,
+          time: form.time,
+          frequency: form.frequency,
+        }),
+      });
+      const result = await readApiJson(response);
+      setMessage(response.ok ? "Erinnerung gespeichert." : result.error || "Erinnerung konnte nicht gespeichert werden.");
+      if (response.ok) await loadReminders();
+    } catch {
+      setMessage("Erinnerung konnte nicht gespeichert werden. Bitte prüfen, ob der Server läuft.");
+    }
+  };
+
+  const deleteReminder = async (id: string) => {
+    try {
+      const response = await apiFetch(`/api/reminders/${id}`, { method: "DELETE" });
+      setMessage(response.ok ? "Erinnerung entfernt." : "Erinnerung konnte nicht entfernt werden.");
+      if (response.ok) await loadReminders();
+    } catch {
+      setMessage("Erinnerung konnte nicht entfernt werden. Bitte prüfen, ob der Server läuft.");
     }
   };
 
@@ -1988,6 +2161,63 @@ function ReminderScreen({ data }: { data: AppData }) {
         </div>
       </section>
     </section>
+  );
+}
+
+function PinGate({ onLogin }: { onLogin: (pin: string) => Promise<void> }) {
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      await onLogin(pin);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "PIN ist falsch.");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="app-shell">
+      <header className="topbar">
+        <div className="topbar-brand-row">
+          <div className="brand" aria-label="Elternzeugnis">
+            <span className="brand-mark">
+              <img src="/logo-elternzeugnis.png" alt="" />
+            </span>
+            <span>
+              <strong>Elternzeugnis</strong>
+              <small>Zeugnisse, Erinnerungen und Jahresverlauf</small>
+            </span>
+          </div>
+        </div>
+      </header>
+      <main>
+        <section className="guided-empty">
+          <Lock size={34} />
+          <strong>Familien-PIN</strong>
+          <p>Bitte PIN eingeben, um die App im Heimnetz zu öffnen.</p>
+          <label>
+            PIN
+            <input
+              value={pin}
+              onChange={(event) => setPin(event.target.value)}
+              inputMode="numeric"
+              type="password"
+              autoFocus
+            />
+          </label>
+          <button className="primary-button" onClick={submit} disabled={busy || !pin}>
+            {busy ? "Prüfe" : "Öffnen"}
+          </button>
+          {error ? <p className="error-message">{error}</p> : null}
+        </section>
+      </main>
+      <Footer />
+    </div>
   );
 }
 

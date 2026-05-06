@@ -212,11 +212,6 @@ main {
   color: white;
 }
 
-.dashboard {
-  display: grid;
-  gap: 22px;
-}
-
 .setup-strip {
   align-items: center;
   background: #fffdf7;
@@ -240,68 +235,11 @@ main {
   margin-top: 4px;
 }
 
-.dashboard-hero {
-  background:
-    linear-gradient(110deg, rgba(36, 89, 76, 0.95), rgba(198, 93, 59, 0.9)),
-    #24594c;
-  border-radius: 8px;
-  color: white;
-  min-height: 320px;
-  padding: clamp(26px, 6vw, 72px);
-}
-
-.dashboard-hero .eyebrow,
-.dashboard-hero p {
-  color: #fff3dc;
-}
-
-.dashboard-hero h1 {
-  max-width: 780px;
-}
-
-.dashboard-hero p {
-  font-size: 1.08rem;
-  line-height: 1.7;
-  max-width: 720px;
-}
-
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 20px;
-}
-
-.dashboard-cards {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.dashboard-card {
-  background: #fffdf7;
-  border: 1px solid #ded3bf;
-  border-radius: 8px;
-  color: #18211f;
-  display: grid;
-  gap: 8px;
-  min-height: 172px;
-  padding: 18px;
-  text-align: left;
-}
-
-.dashboard-card svg {
-  color: #24594c;
-}
-
-.dashboard-card strong,
-.dashboard-card span {
-  display: block;
-}
-
-.dashboard-card span {
-  color: #68746f;
-  line-height: 1.45;
 }
 
 .child-mode {
@@ -1488,8 +1426,7 @@ textarea {
 @media (max-width: 1050px) {
   .certificate-layout,
   .page-grid,
-  .history-layout,
-  .dashboard-cards {
+  .history-layout {
     grid-template-columns: 1fr;
   }
 
@@ -1519,10 +1456,6 @@ textarea {
   .module-tabs button {
     flex: 0 0 auto;
     min-height: 48px;
-  }
-
-  .dashboard-hero {
-    min-height: auto;
   }
 
   .form-grid,

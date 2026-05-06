@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.20
+
+- Dashboard/Startseite entfernt
+- App startet direkt im Zeugnis-Arbeitsbereich
+- Start-Tab und ungenutzte Dashboard-Styles entfernt
+- README an lokalen Netzwerkbetrieb ohne Dashboard angepasst
+- Versionsnummer erhöht
+
 ## 0.1.19
 
 - Erinnerungsmails als gestaltete HTML-Mails ergänzt

@@ -25,7 +25,32 @@ const execFileAsync = promisify(execFile);
 
 dotenv.config({ path: envFile });
 const port = Number(process.env.PORT || 4174);
-const host = process.env.HOST || "127.0.0.1";
+const host = process.env.HOST || "0.0.0.0";
+
+let familyPin = String(process.env.FAMILY_PIN || "");
+const sessions = new Map();
+const sessionLifetimeMs = 1000 * 60 * 60 * 24 * 7;
+
+function authRequired() {
+  return Boolean(familyPin);
+}
+
+function createSessionToken() {
+  const token = crypto.randomBytes(32).toString("hex");
+  sessions.set(token, Date.now() + sessionLifetimeMs);
+  return token;
+}
+
+function isValidSession(token) {
+  if (!token) return false;
+  const expiresAt = sessions.get(token);
+  if (!expiresAt) return false;
+  if (expiresAt < Date.now()) {
+    sessions.delete(token);
+    return false;
+  }
+  return true;
+}
 
 function appVersion() {
   try {
@@ -40,6 +65,46 @@ app.use(express.json({ limit: "4mb" }));
 if (existsSync(distDir)) {
   app.use(express.static(distDir));
 }
+
+app.get("/api/auth/status", (_request, response) => {
+  response.json({
+    requiresPin: authRequired(),
+  });
+});
+
+app.post("/api/auth/login", (request, response) => {
+  if (!authRequired()) {
+    response.status(200).json({ token: createSessionToken() });
+    return;
+  }
+  const pin = String(request.body?.pin || "");
+  if (!pin || pin !== familyPin) {
+    response.status(401).json({ error: "PIN ist falsch." });
+    return;
+  }
+  response.status(200).json({ token: createSessionToken() });
+});
+
+app.use("/api", (request, response, next) => {
+  if (!authRequired()) {
+    next();
+    return;
+  }
+  if (request.path.startsWith("/auth/")) {
+    next();
+    return;
+  }
+
+  const header = String(request.headers.authorization || "");
+  const token = header.startsWith("Bearer ") ? header.slice("Bearer ".length) : "";
+
+  if (isValidSession(token)) {
+    next();
+    return;
+  }
+
+  response.status(401).json({ error: "Nicht angemeldet." });
+});
 
 function smtpConfigured() {
   return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
@@ -211,6 +276,14 @@ async function createBackup(reason = "manual") {
   await mkdir(backupsDir, { recursive: true });
   const stamp = backupStamp();
   const files = [];
+  try {
+    const data = await readAppData();
+    const target = resolve(backupsDir, `app-data-${stamp}-${reason}.json`);
+    await writeFile(target, JSON.stringify(data, null, 2));
+    files.push(target);
+  } catch {
+    // ignore
+  }
   if (existsSync(databaseFile)) {
     const target = resolve(backupsDir, `elternzeugnis-${stamp}-${reason}.sqlite`);
     await copyFile(databaseFile, target);
@@ -239,7 +312,7 @@ function smtpConfig() {
 async function writeEnvConfig(config) {
   const values = {
     PORT: String(process.env.PORT || 4174),
-    HOST: String(process.env.HOST || "127.0.0.1"),
+    HOST: String(process.env.HOST || "0.0.0.0"),
     APP_URL: String(config.appUrl || "http://127.0.0.1:5173"),
     SMTP_HOST: String(config.host || ""),
     SMTP_PORT: String(config.port || "587"),
@@ -247,6 +320,7 @@ async function writeEnvConfig(config) {
     SMTP_USER: String(config.user || ""),
     SMTP_PASS: String(config.pass || process.env.SMTP_PASS || ""),
     SMTP_FROM: String(config.from || ""),
+    FAMILY_PIN: String(config.familyPin ?? process.env.FAMILY_PIN ?? ""),
   };
 
   const body = Object.entries(values)
@@ -255,6 +329,9 @@ async function writeEnvConfig(config) {
 
   await writeFile(envFile, `${body}\n`);
   Object.assign(process.env, values);
+
+  familyPin = String(values.FAMILY_PIN || "");
+  sessions.clear();
 }
 
 function createTransport() {
@@ -484,6 +561,21 @@ app.get("/api/smtp/config", (_request, response) => {
 app.put("/api/smtp/config", async (request, response) => {
   await writeEnvConfig(request.body || {});
   response.json(smtpConfig());
+});
+
+app.get("/api/admin/config", (_request, response) => {
+  response.json({
+    familyPinEnabled: authRequired(),
+  });
+});
+
+app.put("/api/admin/config", async (request, response) => {
+  const pin = String(request.body?.familyPin ?? "");
+  await writeEnvConfig({ familyPin: pin });
+  response.json({
+    ok: true,
+    familyPinEnabled: authRequired(),
+  });
 });
 
 app.get("/api/reminders", async (_request, response) => {

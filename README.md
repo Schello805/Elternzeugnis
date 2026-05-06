@@ -12,7 +12,7 @@ Der pädagogische Kern ist ein Gespräch auf Augenhöhe. Ein Elternzeugnis soll 
 
 - Zeugnis-Editor für Tablet, Desktop und Smartphone
 - direkte Eingabe der Noten im Zeugnisdesign
-- Start-Dashboard für die wichtigsten Wege
+- direkter Einstieg in Zeugnis und Kindermodus ohne Dashboard-Umweg
 - Kindermodus mit großer Touch-Bedienung
 - Startauswahl für Kind, Elternteil, Kalenderjahr und Design vor dem Kindermodus
 - Geburtsdatum in den Kinder-Stammdaten für altersgerechte Texte
