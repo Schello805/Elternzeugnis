@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.22
+
+- Kalenderjahr-Eingaben auf vier Ziffern begrenzt
+- Plausibilitätsprüfung für Kalenderjahre von 1900 bis zum nächsten Kalenderjahr ergänzt
+- Server normalisiert ungültige Jahreswerte zusätzlich beim Speichern
+- Versionsnummer erhöht
+
 ## 0.1.21
 
 - Fragen im Kindermodus und Zeugnis-Editor mit passenden Symbolen ergänzt

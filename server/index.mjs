@@ -153,10 +153,14 @@ const defaultGrades = {
 };
 
 function calendarYear(value, date = new Date().toISOString().slice(0, 10)) {
-  const text = String(value || "");
-  if (/^\d{4}$/.test(text)) return text;
+  const minYear = 1900;
+  const maxYear = new Date().getFullYear() + 1;
+  const text = String(value || "").replace(/\D/g, "").slice(0, 4);
+  const numericYear = Number(text);
+  if (/^\d{4}$/.test(text) && numericYear >= minYear && numericYear <= maxYear) return text;
   const parsed = new Date(`${date}T00:00:00`);
-  return String(Number.isNaN(parsed.getTime()) ? new Date().getFullYear() : parsed.getFullYear());
+  const fallbackYear = Number.isNaN(parsed.getTime()) ? new Date().getFullYear() : parsed.getFullYear();
+  return String(Math.min(Math.max(fallbackYear, minYear), maxYear));
 }
 
 function newCertificate(childId = "child-1", parentId = "parent-1") {

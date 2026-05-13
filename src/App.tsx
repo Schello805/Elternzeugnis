@@ -289,10 +289,27 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+const minCalendarYear = 1900;
+
+function maxCalendarYear() {
+  return new Date().getFullYear() + 1;
+}
+
+function isValidCalendarYear(value?: string) {
+  if (!value || !/^\d{4}$/.test(value)) return false;
+  const year = Number(value);
+  return year >= minCalendarYear && year <= maxCalendarYear();
+}
+
+function sanitizeCalendarYear(value: string) {
+  return value.replace(/\D/g, "").slice(0, 4);
+}
+
 function calendarYear(value?: string, date = today()) {
-  if (value && /^\d{4}$/.test(value)) return value;
+  if (isValidCalendarYear(value)) return String(value);
   const fromDate = new Date(`${date}T00:00:00`);
-  return String(Number.isNaN(fromDate.getTime()) ? new Date().getFullYear() : fromDate.getFullYear());
+  const fallbackYear = Number.isNaN(fromDate.getTime()) ? new Date().getFullYear() : fromDate.getFullYear();
+  return String(Math.min(Math.max(fallbackYear, minCalendarYear), maxCalendarYear()));
 }
 
 function childAge(child: Person | undefined, atDate = today()) {
@@ -317,6 +334,28 @@ function ageGroup(age: number | null) {
 function ageLabel(child: Person | undefined, atDate = today()) {
   const age = childAge(child, atDate);
   return age === null ? "Alter nicht angegeben" : `${age} Jahre`;
+}
+
+function CalendarYearInput({
+  value,
+  date,
+  onChange,
+}: {
+  value: string;
+  date: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <input
+      inputMode="numeric"
+      maxLength={4}
+      pattern="[0-9]{4}"
+      title={`Vierstelliges Kalenderjahr von ${minCalendarYear} bis ${maxCalendarYear()}`}
+      value={value}
+      onBlur={() => onChange(calendarYear(value, date))}
+      onChange={(event) => onChange(sanitizeCalendarYear(event.target.value))}
+    />
+  );
 }
 
 type GradeVisualMode = "smileys" | "stars" | "grades";
@@ -870,7 +909,11 @@ function ChildModeScreen({
             </label>
             <label>
               Kalenderjahr
-              <input value={data.draft.year} onChange={(event) => updateDraft("year", event.target.value)} />
+              <CalendarYearInput
+                value={data.draft.year}
+                date={data.draft.date}
+                onChange={(value) => updateDraft("year", value)}
+              />
             </label>
             <label>
               Datum
@@ -1206,7 +1249,11 @@ function CertificateScreen({
         </label>
         <label>
           Kalenderjahr
-          <input value={data.draft.year} onChange={(event) => updateDraft("year", event.target.value)} />
+          <CalendarYearInput
+            value={data.draft.year}
+            date={data.draft.date}
+            onChange={(value) => updateDraft("year", value)}
+          />
         </label>
         <label>
           Datum
