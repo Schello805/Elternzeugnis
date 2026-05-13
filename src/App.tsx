@@ -57,6 +57,7 @@ type Person = {
 
 type Category = {
   id: string;
+  icon: string;
   title: string;
   childHint: string;
   advice: string;
@@ -167,84 +168,98 @@ type AdminStatus = {
 const categories: Category[] = [
   {
     id: "spielzeit",
+    icon: "🎲",
     title: "Spielzeit",
     childHint: "Gibt es gemeinsame Zeit zum Spielen, Lesen, Lachen oder Quatsch machen?",
     advice: "Kurze, verlässliche gemeinsame Zeit wirkt oft stärker als große Versprechen.",
   },
   {
     id: "kuschelfaktor",
+    icon: "🤗",
     title: "Kuschelfaktor",
     childHint: "Gibt es genug Nähe, Trost, Umarmungen oder gemütliche Zeit, wenn du das möchtest?",
     advice: "Fragt nach, welche Nähe gut tut. Kinder brauchen Wahlmöglichkeiten: kuscheln, reden oder einfach nebeneinander sein.",
   },
   {
     id: "kochkuenste",
+    icon: "🍳",
     title: "Kochkünste",
     childHint: "Schmeckt das Essen und darfst du manchmal mitentscheiden oder mithelfen?",
     advice: "Ein gemeinsames Lieblingsessen oder ein Mitmach-Abend kann Alltag und Beziehung sehr leicht stärken.",
   },
   {
     id: "fahrdienst",
+    icon: "🚗",
     title: "Fahrdienst",
     childHint: "Klappt Bringen, Abholen und Unterwegssein zuverlässig und ohne unnötigen Stress?",
     advice: "Klare Zeiten und kleine Puffer helfen Kindern, sich sicher und weniger gehetzt zu fühlen.",
   },
   {
     id: "geduld",
+    icon: "⏳",
     title: "Geduld",
     childHint: "Bleibt die Person ruhig und freundlich, wenn etwas Zeit braucht?",
     advice: "Vereinbart ein Pausenwort. Es schützt vor Streit und hilft allen, wieder gut zuzuhören.",
   },
   {
     id: "freundlichkeit",
+    icon: "💛",
     title: "Freundlichkeit",
     childHint: "Spricht die Person liebevoll mit dir, auch wenn es gerade schwierig ist?",
     advice: "Freundliche Worte sind kein Extra. Sie geben Kindern Sicherheit und machen Kritik leichter annehmbar.",
   },
   {
     id: "taschengeld",
+    icon: "🪙",
     title: "Taschengeld",
     childHint: "Ist Taschengeld oder Geld für Wünsche fair, verständlich und gut besprochen?",
     advice: "Klare Regeln zu Geld helfen Kindern, Verantwortung zu üben, ohne dass daraus Machtkämpfe werden.",
   },
   {
     id: "familienausfluege",
+    icon: "🧭",
     title: "Familienausflüge",
     childHint: "Gibt es schöne gemeinsame Ausflüge, Erlebnisse oder kleine Abenteuer?",
     advice: "Es muss nicht groß sein. Ein verlässlicher kleiner Ausflug kann mehr zählen als ein perfekter Plan.",
   },
   {
     id: "urlaubszeit",
+    icon: "🏖️",
     title: "Urlaubszeit",
     childHint: "Fühlt sich Urlaub oder freie Zeit gemeinsam erholsam, fair und schön geplant an?",
     advice: "Kinder entspannen leichter, wenn Pausen, Wünsche und gemeinsame Zeiten vorher besprochen werden.",
   },
   {
     id: "partyvorbereitung",
+    icon: "🎈",
     title: "Partyvorbereitung",
     childHint: "Hilft die Person gut bei Geburtstagen, Feiern oder besonderen Tagen?",
     advice: "Bei Feiern brauchen Kinder oft Mitsprache und Entlastung. Eine kleine Checkliste kann Druck herausnehmen.",
   },
   {
     id: "coolness",
+    icon: "😎",
     title: "Coolness",
     childHint: "Bleibt die Person locker, humorvoll und peinlich nur im guten Maß?",
     advice: "Humor verbindet. Gleichzeitig hilft Nachfragen: Was ist lustig, und was ist mir vor anderen unangenehm?",
   },
   {
     id: "lernen",
+    icon: "📚",
     title: "Hilfe beim Lernen",
     childHint: "Wird Lernen erklärt, ohne Druck zu machen und mit Mut für den nächsten Schritt?",
     advice: "Fehler sind Lernspuren. Erst ermutigen, dann gemeinsam einen kleinen Übungsschritt wählen.",
   },
   {
     id: "klamottenberatung",
+    icon: "👕",
     title: "Beratung beim Klamottenkauf",
     childHint: "Wirst du bei Kleidung ernst genommen und gut beraten, ohne dass es Streit geben muss?",
     advice: "Kleidung ist auch Ausdruck von Selbstständigkeit. Ein Budget und ein paar klare Grenzen helfen beiden Seiten.",
   },
   {
     id: "probleme_reden",
+    icon: "💬",
     title: "Reden über Probleme",
     childHint: "Kannst du über Sorgen, Streit oder schwierige Gefühle sprechen und wirst dabei ernst genommen?",
     advice: "Zehn Minuten ungeteilte Zuhörzeit stärken Vertrauen mehr als schnelle Lösungen.",
@@ -302,6 +317,32 @@ function ageGroup(age: number | null) {
 function ageLabel(child: Person | undefined, atDate = today()) {
   const age = childAge(child, atDate);
   return age === null ? "Alter nicht angegeben" : `${age} Jahre`;
+}
+
+type GradeVisualMode = "smileys" | "stars" | "grades";
+
+function gradeVisualMode(child: Person | undefined, atDate = today()): GradeVisualMode {
+  const group = ageGroup(childAge(child, atDate));
+  if (group === "young") return "smileys";
+  if (group === "primary" || group === "unknown") return "stars";
+  return "grades";
+}
+
+function gradeOptions(child: Person | undefined, atDate = today()) {
+  const mode = gradeVisualMode(child, atDate);
+  const labels: Record<GradeVisualMode, string[]> = {
+    grades: ["", "1", "2", "3", "4", "5", "6"],
+    smileys: ["", "😍", "😊", "🙂", "😕", "😟", "😢"],
+    stars: ["", "★★★★★", "★★★★", "★★★", "★★", "★", "☆"],
+  };
+
+  return [1, 2, 3, 4, 5, 6].map((grade) => ({
+    grade,
+    label: labels[mode][grade],
+    mode,
+    help: gradeCopy(grade),
+    aria: `Bewertung ${grade}: ${gradeCopy(grade)}`,
+  }));
 }
 
 function ageAdaptedHint(category: Category, child: Person | undefined, atDate = today()) {
@@ -777,6 +818,7 @@ function ChildModeScreen({
   const [setupDone, setSetupDone] = useState(false);
   const [focusIndex, setFocusIndex] = useState(0);
   const category = categories[focusIndex];
+  const gradeItems = gradeOptions(child, data.draft.date);
 
   const updateDraft = <Key extends keyof Certificate>(key: Key, value: Certificate[Key]) => {
     setData((current) => ({ ...current, draft: { ...current.draft, [key]: value } }));
@@ -873,19 +915,25 @@ function ChildModeScreen({
           <span style={{ width: `${((focusIndex + 1) / categories.length) * 100}%` }} />
         </div>
         <div className="child-question">
-          <strong>{category.title}</strong>
+          <div className="question-heading">
+            <span className="question-icon" aria-hidden="true">
+              {category.icon}
+            </span>
+            <strong>{category.title}</strong>
+          </div>
           <p>{ageAdaptedHint(category, child, data.draft.date)}</p>
           <small>{child?.name || "Kind"}: {ageLabel(child, data.draft.date)}</small>
         </div>
         <div className="big-grade-grid">
-          {[1, 2, 3, 4, 5, 6].map((grade) => (
+          {gradeItems.map((option) => (
             <button
-              key={grade}
-              className={data.draft.grades[category.id] === grade ? "selected" : ""}
-              onClick={() => updateGrade(grade)}
+              key={option.grade}
+              aria-label={`${category.title}: ${option.aria}`}
+              className={data.draft.grades[category.id] === option.grade ? "selected" : ""}
+              onClick={() => updateGrade(option.grade)}
             >
-              <span>{grade}</span>
-              <small>{gradeCopy(grade)}</small>
+              <span className={`grade-symbol ${option.mode}`}>{option.label}</span>
+              <small>{option.help}</small>
             </button>
           ))}
         </div>
@@ -1068,6 +1116,7 @@ function CertificateScreen({
   const child = data.children.find((person) => person.id === data.draft.childId) || data.children[0];
   const parent = data.parents.find((person) => person.id === data.draft.parentId) || data.parents[0];
   const lowGrades = categories.filter((category) => data.draft.grades[category.id] >= 5);
+  const gradeItems = gradeOptions(child, data.draft.date);
   const [feedback, setFeedback] = useState("");
 
   const updateDraft = <Key extends keyof Certificate>(key: Key, value: Certificate[Key]) => {
@@ -1212,19 +1261,25 @@ function CertificateScreen({
         <div className="grade-table">
           {categories.map((category) => (
             <section className="grade-line" key={category.id}>
-              <div>
-                <strong>{category.title}</strong>
-                <small>{ageAdaptedHint(category, child, data.draft.date)}</small>
+              <div className="grade-title">
+                <span className="category-icon" aria-hidden="true">
+                  {category.icon}
+                </span>
+                <div>
+                  <strong>{category.title}</strong>
+                  <small>{ageAdaptedHint(category, child, data.draft.date)}</small>
+                </div>
               </div>
               <div className="grade-picker" aria-label={`Note für ${category.title}`}>
-                {[1, 2, 3, 4, 5, 6].map((grade) => (
+                {gradeItems.map((option) => (
                   <button
-                    key={grade}
-                    className={data.draft.grades[category.id] === grade ? "selected" : ""}
-                    onClick={() => updateGrade(category.id, grade)}
+                    key={option.grade}
+                    aria-label={`${category.title}: ${option.aria}`}
+                    className={data.draft.grades[category.id] === option.grade ? "selected" : ""}
+                    onClick={() => updateGrade(category.id, option.grade)}
                     type="button"
                   >
-                    {grade}
+                    <span className={`grade-symbol ${option.mode}`}>{option.label}</span>
                   </button>
                 ))}
               </div>

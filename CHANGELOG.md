@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.21
+
+- Fragen im Kindermodus und Zeugnis-Editor mit passenden Symbolen ergänzt
+- Bewertungsdarstellung altersgerecht umgestellt: Smileys für jüngere Kinder, Sterne für Grundschulkinder und Noten für ältere Kinder
+- Interne Notenwerte bleiben für Verlauf, Auswertung und PDF erhalten
+- Tablet-Layouts der Bewertungsbuttons für längere Sternanzeigen angepasst
+- Versionsnummer erhöht
+
 ## 0.1.20
 
 - Dashboard/Startseite entfernt
