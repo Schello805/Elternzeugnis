@@ -384,6 +384,15 @@ function gradeOptions(child: Person | undefined, atDate = today()) {
   }));
 }
 
+function certificateGradeOptions() {
+  return [1, 2, 3, 4, 5, 6].map((grade) => ({
+    grade,
+    label: String(grade),
+    mode: "grades" as GradeVisualMode,
+    aria: `Note ${grade}: ${gradeCopy(grade)}`,
+  }));
+}
+
 function ageAdaptedHint(category: Category, child: Person | undefined, atDate = today()) {
   const group = ageGroup(childAge(child, atDate));
   const additions: Record<string, string> = {
@@ -1159,7 +1168,7 @@ function CertificateScreen({
   const child = data.children.find((person) => person.id === data.draft.childId) || data.children[0];
   const parent = data.parents.find((person) => person.id === data.draft.parentId) || data.parents[0];
   const lowGrades = categories.filter((category) => data.draft.grades[category.id] >= 5);
-  const gradeItems = gradeOptions(child, data.draft.date);
+  const gradeItems = certificateGradeOptions();
   const [feedback, setFeedback] = useState("");
 
   const updateDraft = <Key extends keyof Certificate>(key: Key, value: Certificate[Key]) => {

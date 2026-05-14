@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.23
+
+- Altersgerechte Smileys und Sterne auf den Kindermodus begrenzt
+- Zeugnisansicht und PDF-Vorlage zeigen wieder klassische Noten
+- Versionsnummer erhöht
+
 ## 0.1.22
 
 - Kalenderjahr-Eingaben auf vier Ziffern begrenzt
