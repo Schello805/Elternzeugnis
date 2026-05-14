@@ -352,6 +352,15 @@ main {
   margin-top: 10px;
 }
 
+.follow-up-step {
+  display: grid;
+  gap: 14px;
+}
+
+.assistant-textarea {
+  min-height: 170px;
+}
+
 .big-grade-grid {
   display: grid;
   gap: 12px;
@@ -1205,10 +1214,6 @@ textarea {
   padding: 12px;
 }
 
-.certificate-fields label:nth-child(3) {
-  grid-column: 1 / -1;
-}
-
 .preview-fields section {
   background: rgba(255, 250, 240, 0.76);
   border: 1px solid #d8cdb9;
@@ -1217,6 +1222,7 @@ textarea {
   padding: 12px;
 }
 
+.certificate-fields .signature-field,
 .preview-fields section:nth-child(3) {
   grid-column: 1 / -1;
 }

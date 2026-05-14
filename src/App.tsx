@@ -909,18 +909,31 @@ function ChildModeScreen({
   const parent = data.parents.find((person) => person.id === data.draft.parentId) || data.parents[0];
   const [setupDone, setSetupDone] = useState(false);
   const [focusIndex, setFocusIndex] = useState(0);
-  const category = categories[focusIndex];
+  const totalSteps = categories.length + 3;
+  const isGradeStep = focusIndex < categories.length;
+  const isWishStep = focusIndex === categories.length;
+  const isStrengthStep = focusIndex === categories.length + 1;
+  const isSignatureStep = focusIndex === categories.length + 2;
+  const category = isGradeStep ? categories[focusIndex] : categories[categories.length - 1];
   const gradeItems = gradeOptions(child, data.draft.date);
+  const advanceTimer = useRef<number | null>(null);
 
   useEffect(() => {
     showToast("Am Tablet lässt sich der Kindermodus besonders ruhig gemeinsam ausfüllen.", "info");
   }, [showToast]);
+
+  useEffect(() => {
+    return () => {
+      if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
+    };
+  }, []);
 
   const updateDraft = <Key extends keyof Certificate>(key: Key, value: Certificate[Key]) => {
     setData((current) => ({ ...current, draft: { ...current.draft, [key]: value } }));
   };
 
   const updateGrade = (grade: number) => {
+    if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
     setData((current) => ({
       ...current,
       draft: {
@@ -928,10 +941,29 @@ function ChildModeScreen({
         grades: { ...current.draft.grades, [category.id]: grade },
       },
     }));
+    advanceTimer.current = window.setTimeout(() => {
+      setFocusIndex((current) => Math.min(current + 1, totalSteps - 1));
+    }, 180);
   };
 
-  const next = () => setFocusIndex((current) => Math.min(current + 1, categories.length - 1));
-  const previous = () => setFocusIndex((current) => Math.max(current - 1, 0));
+  const next = () => setFocusIndex((current) => Math.min(current + 1, totalSteps - 1));
+  const previous = () => {
+    if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
+    setFocusIndex((current) => Math.max(current - 1, 0));
+  };
+
+  const saveCertificate = () => {
+    setData((current) => {
+      const certificate = { ...current.draft, id: newId(), createdAt: new Date().toISOString() };
+      return {
+        ...current,
+        certificates: [certificate, ...current.certificates],
+        draft: newCertificate(certificate.childId, certificate.parentId),
+      };
+    });
+    showToast("Zeugnis gespeichert. Im Verlauf findest du es wieder.");
+    setView("history");
+  };
 
   if (!setupDone) {
     return (
@@ -1012,57 +1044,108 @@ function ChildModeScreen({
           {child?.name || "Kind"} erzählt, was bei {parent?.name || "Elternteil"} gut tut
         </h1>
         <div className="progress-track">
-          <span style={{ width: `${((focusIndex + 1) / categories.length) * 100}%` }} />
+          <span style={{ width: `${((focusIndex + 1) / totalSteps) * 100}%` }} />
         </div>
         <div className="child-progress-meta">
           <span>
-            Frage {focusIndex + 1} von {categories.length}
+            Schritt {focusIndex + 1} von {totalSteps}
           </span>
-          <span>{gradeVisualMode(child, data.draft.date) === "grades" ? "Noten" : gradeVisualMode(child, data.draft.date) === "smileys" ? "Smileys" : "Sterne"}</span>
+          <span>
+            {isGradeStep
+              ? gradeVisualMode(child, data.draft.date) === "grades"
+                ? "Noten"
+                : gradeVisualMode(child, data.draft.date) === "smileys"
+                  ? "Smileys"
+                  : "Sterne"
+              : isSignatureStep
+                ? "Unterschrift"
+                : "Gedanken"}
+          </span>
         </div>
-        <div className="child-question">
-          <div className="question-heading">
-            <span className="question-icon" aria-hidden="true">
-              {category.icon}
-            </span>
-            <strong>{category.title}</strong>
+        {isGradeStep ? (
+          <>
+            <div className="child-question">
+              <div className="question-heading">
+                <span className="question-icon" aria-hidden="true">
+                  {category.icon}
+                </span>
+                <strong>{category.title}</strong>
+              </div>
+              <p>{questionHint(category, parent)}</p>
+              <small>{child?.name || "Kind"}: {ageLabel(child, data.draft.date)}</small>
+            </div>
+            <div className="big-grade-grid">
+              {gradeItems.map((option) => (
+                <button
+                  key={option.grade}
+                  aria-label={`${category.title}: ${option.aria}`}
+                  className={data.draft.grades[category.id] === option.grade ? "selected" : ""}
+                  onClick={() => updateGrade(option.grade)}
+                >
+                  <span className={`grade-symbol ${option.mode}`}>{option.label}</span>
+                  <small>{option.help}</small>
+                </button>
+              ))}
+            </div>
+          </>
+        ) : null}
+        {isWishStep ? (
+          <div className="child-question follow-up-step">
+            <div className="question-heading">
+              <span className="question-icon" aria-hidden="true">
+                💬
+              </span>
+              <strong>Das wünsche ich mir mehr</strong>
+            </div>
+            <p>Was soll es zwischen dir und {parent?.name || "der Bezugsperson"} öfter geben?</p>
+            <textarea
+              className="assistant-textarea"
+              value={data.draft.wishes}
+              onChange={(event) => updateDraft("wishes", event.target.value)}
+            />
           </div>
-          <p>{questionHint(category, parent)}</p>
-          <small>{child?.name || "Kind"}: {ageLabel(child, data.draft.date)}</small>
-        </div>
-        <div className="big-grade-grid">
-          {gradeItems.map((option) => (
-            <button
-              key={option.grade}
-              aria-label={`${category.title}: ${option.aria}`}
-              className={data.draft.grades[category.id] === option.grade ? "selected" : ""}
-              onClick={() => updateGrade(option.grade)}
-            >
-              <span className={`grade-symbol ${option.mode}`}>{option.label}</span>
-              <small>{option.help}</small>
-            </button>
-          ))}
-        </div>
-        {data.draft.grades[category.id] >= 5 ? <WishChips category={category} child={child} setData={setData} /> : null}
+        ) : null}
+        {isStrengthStep ? (
+          <div className="child-question follow-up-step">
+            <div className="question-heading">
+              <span className="question-icon" aria-hidden="true">
+                💛
+              </span>
+              <strong>Das fand ich gut</strong>
+            </div>
+            <p>Was macht {parent?.name || "die Bezugsperson"} schon gut oder was war besonders schön?</p>
+            <textarea
+              className="assistant-textarea"
+              value={data.draft.strengths}
+              onChange={(event) => updateDraft("strengths", event.target.value)}
+            />
+          </div>
+        ) : null}
+        {isSignatureStep ? (
+          <div className="child-question follow-up-step">
+            <div className="question-heading">
+              <span className="question-icon" aria-hidden="true">
+                ✍️
+              </span>
+              <strong>Unterschrift</strong>
+            </div>
+            <p>Unterschreibe mit Finger oder Stift.</p>
+            <SignaturePad value={data.draft.signature} onChange={(value) => updateDraft("signature", value)} />
+          </div>
+        ) : null}
         <div className="hero-actions">
-          {focusIndex === 0 ? (
-            <button className="secondary-button" onClick={() => setSetupDone(false)}>
-              Auswahl ändern
-            </button>
-          ) : (
+          {focusIndex > 0 ? (
             <button className="secondary-button" onClick={previous}>
               Zurück
             </button>
-          )}
-          {focusIndex === categories.length - 1 ? (
-            <button className="primary-button" onClick={() => setView("certificate")}>
-              <CheckCircle2 size={19} /> Zum Zeugnis
+          ) : null}
+          {isWishStep ? <button className="primary-button" onClick={next}>Zur nächsten Frage</button> : null}
+          {isStrengthStep ? <button className="primary-button" onClick={next}>Zur Unterschrift</button> : null}
+          {isSignatureStep ? (
+            <button className="primary-button" onClick={saveCertificate}>
+              <Save size={19} /> Speichern
             </button>
-          ) : (
-            <button className="primary-button" onClick={next}>
-              Weiter
-            </button>
-          )}
+          ) : null}
         </div>
       </div>
     </section>
@@ -1070,7 +1153,7 @@ function ChildModeScreen({
 }
 
 function gradeCopy(grade: number) {
-  return ["", "Tut mir gut", "Meist gut", "Okay", "Bitte üben", "Ich brauche Hilfe", "Bitte reden"][grade];
+  return ["", "Tut mir gut", "Ganz gut", "Gut", "Noch OK", "Ich brauche Hilfe", "Nicht gut"][grade];
 }
 
 function WishChips({
@@ -1423,19 +1506,12 @@ function CertificateScreen({
         {certificateMode === "edit" ? (
           <div className="certificate-fields">
             <label>
-              Das gibt mir Sicherheit und Freude
-              <textarea value={data.draft.strengths} onChange={(event) => updateDraft("strengths", event.target.value)} />
-            </label>
-            <label>
-              Das wünsche ich mir für unser Miteinander
+              Das wünsche ich mir mehr
               <textarea value={data.draft.wishes} onChange={(event) => updateDraft("wishes", event.target.value)} />
             </label>
             <label>
-              Ein Moment, den ich behalten möchte
-              <textarea
-                value={data.draft.favoriteMoment}
-                onChange={(event) => updateDraft("favoriteMoment", event.target.value)}
-              />
+              Das fand ich gut
+              <textarea value={data.draft.strengths} onChange={(event) => updateDraft("strengths", event.target.value)} />
             </label>
             <div className="signature-field">
               Unterschrift
@@ -1445,16 +1521,12 @@ function CertificateScreen({
         ) : (
           <div className="certificate-fields preview-fields">
             <section>
-              <strong>Das gibt mir Sicherheit und Freude</strong>
-              <p>{data.draft.strengths || "Noch offen"}</p>
-            </section>
-            <section>
-              <strong>Das wünsche ich mir für unser Miteinander</strong>
+              <strong>Das wünsche ich mir mehr</strong>
               <p>{data.draft.wishes || "Noch offen"}</p>
             </section>
             <section>
-              <strong>Ein Moment, den ich behalten möchte</strong>
-              <p>{data.draft.favoriteMoment || "Noch offen"}</p>
+              <strong>Das fand ich gut</strong>
+              <p>{data.draft.strengths || "Noch offen"}</p>
             </section>
           </div>
         )}

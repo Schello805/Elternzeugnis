@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.29
+
+- Kindermodus springt nach einer Bewertung automatisch zum nächsten Schritt
+- „Weiter“ und „Auswahl ändern“ aus der Bewertungsführung entfernt
+- Bewertungstexte auf „Tut mir gut“, „Ganz gut“, „Gut“, „Noch OK“, „Ich brauche Hilfe“ und „Nicht gut“ angepasst
+- Folgefragen „Das wünsche ich mir mehr“, „Das fand ich gut“ und Unterschrift in den Assistenten integriert
+- Zeugnisabschluss im Kindermodus mit Speichern-Button nach der Unterschrift ergänzt
+- Altes drittes Freitextfeld aus der Zeugnisansicht entfernt
+- Versionsnummer erhöht
+
 ## 0.1.28
 
 - Tablet-Empfehlung beim Öffnen des Kindermodus als Toast ergänzt
