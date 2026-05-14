@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.26
+
+- Globales Toast-System für kurze Rückmeldungen ergänzt
+- Kindermodus mit größerer Fragekarte, Fragezähler und dezentem Tablet-Hinweis verbessert
+- Zeugnisansicht in Eingabe und Vorschau getrennt
+- PDF-Export nutzt automatisch die ruhige Vorschau ohne Eingabebuttons
+- Stammdaten als Karten mit Statushinweisen aufbereitet
+- Pädagogische Mikrotexte an passenden Stellen ergänzt
+- Versionsnummer erhöht
+
 ## 0.1.25
 
 - Erfolgreiche Einrichtung in den Stammdaten als Toast umgesetzt

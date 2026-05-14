@@ -268,6 +268,18 @@ main {
   max-width: 760px;
 }
 
+.tablet-hint {
+  background: #edf6f2;
+  border: 1px solid #c5dbd1;
+  border-radius: 8px;
+  color: #21483f;
+  display: inline-block;
+  font-weight: 800;
+  line-height: 1.45;
+  margin: 0 0 18px;
+  padding: 10px 12px;
+}
+
 .child-design-picker {
   margin: 16px 0 0;
 }
@@ -286,12 +298,21 @@ main {
   height: 100%;
 }
 
+.child-progress-meta {
+  color: #53615c;
+  display: flex;
+  font-size: 0.9rem;
+  font-weight: 900;
+  justify-content: space-between;
+  margin: -10px 0 14px;
+}
+
 .child-question {
   background: #edf6f2;
   border: 1px solid #c5dbd1;
   border-radius: 8px;
   margin-bottom: 16px;
-  padding: 18px;
+  padding: clamp(18px, 3vw, 28px);
 }
 
 .child-question strong {
@@ -318,9 +339,9 @@ main {
 }
 
 .question-icon {
-  font-size: 2.3rem;
-  height: 64px;
-  width: 64px;
+  font-size: clamp(2.6rem, 6vw, 4.3rem);
+  height: clamp(76px, 12vw, 112px);
+  width: clamp(76px, 12vw, 112px);
 }
 
 .category-icon {
@@ -334,6 +355,11 @@ main {
   font-size: 1.1rem;
   line-height: 1.55;
   margin: 8px 0 0;
+}
+
+.child-question .child-microcopy {
+  color: #24594c;
+  font-weight: 900;
 }
 
 .child-question small {
@@ -354,7 +380,7 @@ main {
   border: 2px solid #d8cdb9;
   border-radius: 8px;
   color: #24302d;
-  min-height: 108px;
+  min-height: 126px;
   padding: 10px 6px;
 }
 
@@ -433,6 +459,30 @@ h1 {
   gap: 14px;
   position: sticky;
   top: 96px;
+}
+
+.mode-toggle {
+  background: #f4ead8;
+  border: 1px solid #d8cdb9;
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 4px;
+}
+
+.mode-toggle button {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: #34423d;
+  font-weight: 900;
+  min-height: 40px;
+}
+
+.mode-toggle .selected {
+  background: #24594c;
+  color: white;
 }
 
 label {
@@ -924,6 +974,20 @@ textarea {
   font-size: 0.68rem;
 }
 
+.grade-result {
+  align-self: center;
+  background: #fffaf0;
+  border: 1px solid #c18f43;
+  border-radius: 8px;
+  color: #24302d;
+  display: inline-flex;
+  font-size: 1rem;
+  font-weight: 950;
+  justify-content: center;
+  min-width: 92px;
+  padding: 10px 12px;
+}
+
 .certificate-sheet.design-classic .certificate-head {
   border-bottom-color: #7d5a28;
 }
@@ -1162,6 +1226,31 @@ textarea {
   grid-column: 1 / -1;
 }
 
+.preview-fields section {
+  background: rgba(255, 250, 240, 0.76);
+  border: 1px solid #d8cdb9;
+  border-radius: 8px;
+  color: #33403c;
+  padding: 12px;
+}
+
+.preview-fields section:nth-child(3) {
+  grid-column: 1 / -1;
+}
+
+.preview-fields strong,
+.preview-fields p {
+  display: block;
+}
+
+.preview-fields p {
+  color: #3d514b;
+  line-height: 1.55;
+  margin: 7px 0 0;
+  min-height: 46px;
+  white-space: pre-wrap;
+}
+
 .signature-pad {
   display: grid;
   gap: 8px;
@@ -1268,6 +1357,17 @@ textarea {
   max-width: 760px;
 }
 
+.micro-note {
+  background: #edf6f2;
+  border: 1px solid #c5dbd1;
+  border-radius: 8px;
+  color: #21483f;
+  font-weight: 800;
+  line-height: 1.45;
+  margin: 0;
+  padding: 10px 12px;
+}
+
 .panel-title {
   margin-bottom: 16px;
 }
@@ -1291,6 +1391,50 @@ textarea {
   gap: 12px;
   grid-template-columns: 1fr 1fr auto;
   padding-bottom: 12px;
+}
+
+.person-card {
+  align-items: stretch;
+  background: #fffaf0;
+  border: 1px solid #eadfcb;
+  border-bottom: 1px solid #eadfcb;
+  border-radius: 8px;
+  grid-template-columns: 1.1fr 1fr 1fr auto;
+  padding: 14px;
+}
+
+.person-card-head {
+  align-self: center;
+  display: grid;
+  gap: 6px;
+}
+
+.person-card-head strong,
+.person-card-head small {
+  display: block;
+}
+
+.person-card-head small {
+  color: #68746f;
+  font-weight: 850;
+}
+
+.status-pill {
+  background: #fff3d9;
+  border: 1px solid #e3c17c;
+  border-radius: 999px;
+  color: #68450e;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 950;
+  justify-self: start;
+  padding: 4px 9px;
+}
+
+.status-pill.ready {
+  background: #edf6f2;
+  border-color: #c5dbd1;
+  color: #21483f;
 }
 
 .reminder-row {
@@ -1414,6 +1558,16 @@ textarea {
   right: 24px;
   top: 118px;
   z-index: 20;
+}
+
+.toast-message.info {
+  background: #275a65;
+  border-color: #204c55;
+}
+
+.toast-message.warn {
+  background: #8a6124;
+  border-color: #75511d;
 }
 
 .guided-empty {

@@ -151,6 +151,13 @@ type SmtpConfig = {
 
 type SyncState = "lade" | "synchronisiert" | "speichert" | "offline";
 
+type ToastKind = "success" | "info" | "warn";
+
+type ToastState = {
+  message: string;
+  kind: ToastKind;
+};
+
 type AdminStatus = {
   version: string;
   host: string;
@@ -593,6 +600,7 @@ async function saveAppData(data: AppData) {
 export function App() {
   const [data, setData] = useState<AppData>(loadLocalData);
   const [view, setView] = useState<View>("certificate");
+  const [toast, setToast] = useState<ToastState | null>(null);
   const [serverLoaded, setServerLoaded] = useState(false);
   const [syncState, setSyncState] = useState<SyncState>("lade");
   const [syncMessage, setSyncMessage] = useState("");
@@ -602,6 +610,16 @@ export function App() {
   const dataRef = useRef(data);
   const lastChangeAt = useRef(Date.now());
   const skipNextSave = useRef(false);
+
+  const showToast = (message: string, kind: ToastKind = "success") => {
+    setToast({ message, kind });
+  };
+
+  useEffect(() => {
+    if (!toast) return undefined;
+    const timeout = window.setTimeout(() => setToast(null), 3600);
+    return () => window.clearTimeout(timeout);
+  }, [toast]);
 
   useEffect(() => {
     const handler = () => {
@@ -755,9 +773,21 @@ export function App() {
     <div className="app-shell">
       <Header view={view} setView={setView} syncState={syncState} syncMessage={syncMessage} />
       <main>
-        <AppWorkspace data={data} setData={setData} view={view} setView={setView} />
+        <AppWorkspace data={data} setData={setData} view={view} setView={setView} showToast={showToast} />
       </main>
+      <GlobalToast toast={toast} />
       <Footer />
+    </div>
+  );
+}
+
+function GlobalToast({ toast }: { toast: ToastState | null }) {
+  if (!toast) return null;
+  const Icon = toast.kind === "warn" ? Sparkles : CheckCircle2;
+  return (
+    <div className={`toast-message ${toast.kind}`} role="status" aria-live="polite">
+      <Icon size={19} />
+      <span>{toast.message}</span>
     </div>
   );
 }
@@ -818,11 +848,13 @@ function AppWorkspace({
   setData,
   view,
   setView,
+  showToast,
 }: {
   data: AppData;
   setData: Dispatch<SetStateAction<AppData>>;
   view: View;
   setView: (view: View) => void;
+  showToast: (message: string, kind?: ToastKind) => void;
 }) {
   const setupDone = isSetupComplete(data);
   return (
@@ -840,8 +872,8 @@ function AppWorkspace({
         </div>
       ) : null}
       {view === "child" ? <ChildModeScreen data={data} setData={setData} setView={setView} /> : null}
-      {view === "certificate" ? <CertificateScreen data={data} setData={setData} /> : null}
-      {view === "people" ? <PeopleScreen data={data} setData={setData} /> : null}
+      {view === "certificate" ? <CertificateScreen data={data} setData={setData} showToast={showToast} /> : null}
+      {view === "people" ? <PeopleScreen data={data} setData={setData} showToast={showToast} /> : null}
       {view === "history" ? <HistoryScreen data={data} setData={setData} setView={setView} /> : null}
       {view === "reminders" ? <ReminderScreen data={data} /> : null}
       {view === "admin" ? <AdminScreen /> : null}
@@ -911,6 +943,7 @@ function ChildModeScreen({
             Erst wählen wir Kind, Elternteil und Kalenderjahr. Danach sieht das Kind nur noch die
             einfachen Fragen im Kindermodus.
           </p>
+          <p className="tablet-hint">Am Tablet lässt sich der Kindermodus besonders ruhig gemeinsam ausfüllen.</p>
           <div className="form-grid">
             <label>
               Kind
@@ -982,6 +1015,12 @@ function ChildModeScreen({
         <div className="progress-track">
           <span style={{ width: `${((focusIndex + 1) / categories.length) * 100}%` }} />
         </div>
+        <div className="child-progress-meta">
+          <span>
+            Frage {focusIndex + 1} von {categories.length}
+          </span>
+          <span>{gradeVisualMode(child, data.draft.date) === "grades" ? "Noten" : gradeVisualMode(child, data.draft.date) === "smileys" ? "Smileys" : "Sterne"}</span>
+        </div>
         <div className="child-question">
           <div className="question-heading">
             <span className="question-icon" aria-hidden="true">
@@ -990,6 +1029,7 @@ function ChildModeScreen({
             <strong>{category.title}</strong>
           </div>
           <p>{ageAdaptedHint(category, child, data.draft.date)}</p>
+          <p className="child-microcopy">Wähle das Bild, das sich für dich am passendsten anfühlt.</p>
           <small>{child?.name || "Kind"}: {ageLabel(child, data.draft.date)}</small>
         </div>
         <div className="big-grade-grid">
@@ -1177,15 +1217,17 @@ function SignaturePad({ value, onChange }: { value: string; onChange: (value: st
 function CertificateScreen({
   data,
   setData,
+  showToast,
 }: {
   data: AppData;
   setData: Dispatch<SetStateAction<AppData>>;
+  showToast: (message: string, kind?: ToastKind) => void;
 }) {
   const child = data.children.find((person) => person.id === data.draft.childId) || data.children[0];
   const parent = data.parents.find((person) => person.id === data.draft.parentId) || data.parents[0];
   const lowGrades = categories.filter((category) => data.draft.grades[category.id] >= 5);
   const gradeItems = certificateGradeOptions();
-  const [feedback, setFeedback] = useState("");
+  const [certificateMode, setCertificateMode] = useState<"edit" | "preview">("edit");
 
   const updateDraft = <Key extends keyof Certificate>(key: Key, value: Certificate[Key]) => {
     setData((current) => ({ ...current, draft: { ...current.draft, [key]: value } }));
@@ -1210,10 +1252,12 @@ function CertificateScreen({
         draft: newCertificate(certificate.childId, certificate.parentId),
       };
     });
-    setFeedback("Zeugnis gespeichert. Im Verlauf findest du es wieder.");
+    showToast("Zeugnis gespeichert. Im Verlauf findest du es wieder.");
   };
 
   const exportPdf = async () => {
+    setCertificateMode("preview");
+    await new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
     const sheet = document.querySelector<HTMLElement>(".certificate-sheet");
     if (!sheet) return;
     const canvas = await html2canvas(sheet, { scale: 2, backgroundColor: "#ffffff" });
@@ -1228,7 +1272,7 @@ function CertificateScreen({
     const y = (pageHeight - height) / 2;
     pdf.addImage(image, "PNG", x, y, width, height);
     pdf.save(`Elternzeugnis-${child?.name || "Kind"}-${parent?.name || "Eltern"}.pdf`);
-    setFeedback("PDF wurde erstellt. Das Zeugnis kann jetzt gemeinsam angeschaut werden.");
+    showToast("PDF wurde erstellt. Das Zeugnis kann jetzt gemeinsam angeschaut werden.");
   };
 
   return (
@@ -1236,6 +1280,14 @@ function CertificateScreen({
       <aside className="side-panel no-print">
         <p className="eyebrow">Eingabe</p>
         <h1>Wünsche, Stärken und Momente festhalten</h1>
+        <div className="mode-toggle" aria-label="Ansicht wählen">
+          <button className={certificateMode === "edit" ? "selected" : ""} onClick={() => setCertificateMode("edit")} type="button">
+            Eingabe
+          </button>
+          <button className={certificateMode === "preview" ? "selected" : ""} onClick={() => setCertificateMode("preview")} type="button">
+            Vorschau
+          </button>
+        </div>
         <div className="button-grid compact">
           <button
             className="secondary-button"
@@ -1252,6 +1304,7 @@ function CertificateScreen({
             <Pencil size={19} /> Unterschrift
           </button>
         </div>
+        <p className="micro-note">Am schönsten wirkt das Zeugnis, wenn ihr es nach dem Speichern gemeinsam anschaut.</p>
         <label>
           Kind
           <select value={data.draft.childId} onChange={(event) => updateDraft("childId", event.target.value)}>
@@ -1315,10 +1368,9 @@ function CertificateScreen({
             </p>
           </div>
         ) : null}
-        {feedback ? <p className="success-message">{feedback}</p> : null}
       </aside>
 
-      <article className={`certificate-sheet design-${data.draft.design}`}>
+      <article className={`certificate-sheet design-${data.draft.design} ${certificateMode === "preview" ? "preview-mode" : "edit-mode"}`}>
         <header className="certificate-head">
           <div className="certificate-badge">
             <Star size={20} />
@@ -1342,20 +1394,24 @@ function CertificateScreen({
                   <small>{ageAdaptedHint(category, child, data.draft.date)}</small>
                 </div>
               </div>
-              <div className="grade-picker" aria-label={`Note für ${category.title}`}>
-                {gradeItems.map((option) => (
-                  <button
-                    key={option.grade}
-                    aria-label={`${category.title}: ${option.aria}`}
-                    className={data.draft.grades[category.id] === option.grade ? "selected" : ""}
-                    onClick={() => updateGrade(category.id, option.grade)}
-                    type="button"
-                  >
-                    <span className={`grade-symbol ${option.mode}`}>{option.label}</span>
-                  </button>
-                ))}
-              </div>
-              {data.draft.grades[category.id] >= 5 ? (
+              {certificateMode === "edit" ? (
+                <div className="grade-picker" aria-label={`Note für ${category.title}`}>
+                  {gradeItems.map((option) => (
+                    <button
+                      key={option.grade}
+                      aria-label={`${category.title}: ${option.aria}`}
+                      className={data.draft.grades[category.id] === option.grade ? "selected" : ""}
+                      onClick={() => updateGrade(category.id, option.grade)}
+                      type="button"
+                    >
+                      <span className={`grade-symbol ${option.mode}`}>{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <strong className="grade-result">Note {data.draft.grades[category.id]}</strong>
+              )}
+              {certificateMode === "edit" && data.draft.grades[category.id] >= 5 ? (
                 <div className="inline-advice">
                   <Sparkles size={16} />
                   <span>{category.advice}</span>
@@ -1366,27 +1422,44 @@ function CertificateScreen({
           ))}
         </div>
 
-        <div className="certificate-fields">
-          <label>
-            Das gibt mir Sicherheit und Freude
-            <textarea value={data.draft.strengths} onChange={(event) => updateDraft("strengths", event.target.value)} />
-          </label>
-          <label>
-            Das wünsche ich mir für unser Miteinander
-            <textarea value={data.draft.wishes} onChange={(event) => updateDraft("wishes", event.target.value)} />
-          </label>
-          <label>
-            Ein Moment, den ich behalten möchte
-            <textarea
-              value={data.draft.favoriteMoment}
-              onChange={(event) => updateDraft("favoriteMoment", event.target.value)}
-            />
-          </label>
-          <div className="signature-field">
-            Unterschrift
-            <SignaturePad value={data.draft.signature} onChange={(value) => updateDraft("signature", value)} />
+        {certificateMode === "edit" ? (
+          <div className="certificate-fields">
+            <label>
+              Das gibt mir Sicherheit und Freude
+              <textarea value={data.draft.strengths} onChange={(event) => updateDraft("strengths", event.target.value)} />
+            </label>
+            <label>
+              Das wünsche ich mir für unser Miteinander
+              <textarea value={data.draft.wishes} onChange={(event) => updateDraft("wishes", event.target.value)} />
+            </label>
+            <label>
+              Ein Moment, den ich behalten möchte
+              <textarea
+                value={data.draft.favoriteMoment}
+                onChange={(event) => updateDraft("favoriteMoment", event.target.value)}
+              />
+            </label>
+            <div className="signature-field">
+              Unterschrift
+              <SignaturePad value={data.draft.signature} onChange={(value) => updateDraft("signature", value)} />
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="certificate-fields preview-fields">
+            <section>
+              <strong>Das gibt mir Sicherheit und Freude</strong>
+              <p>{data.draft.strengths || "Noch offen"}</p>
+            </section>
+            <section>
+              <strong>Das wünsche ich mir für unser Miteinander</strong>
+              <p>{data.draft.wishes || "Noch offen"}</p>
+            </section>
+            <section>
+              <strong>Ein Moment, den ich behalten möchte</strong>
+              <p>{data.draft.favoriteMoment || "Noch offen"}</p>
+            </section>
+          </div>
+        )}
         <footer className="certificate-signature">
           <span>{data.draft.date}</span>
           <strong>
@@ -1405,27 +1478,21 @@ function CertificateScreen({
 function PeopleScreen({
   data,
   setData,
+  showToast,
 }: {
   data: AppData;
   setData: Dispatch<SetStateAction<AppData>>;
+  showToast: (message: string, kind?: ToastKind) => void;
 }) {
   const [setupMessage, setSetupMessage] = useState("");
-  const [setupToast, setSetupToast] = useState("");
   const setupComplete =
     data.children.length > 0 &&
     data.parents.length > 0 &&
     data.children.every((person) => person.name.trim() && person.name !== "Kind" && person.birthDate) &&
     data.parents.every((person) => person.name.trim() && person.name !== "Elternteil");
 
-  useEffect(() => {
-    if (!setupToast) return undefined;
-    const timeout = window.setTimeout(() => setSetupToast(""), 3600);
-    return () => window.clearTimeout(timeout);
-  }, [setupToast]);
-
   const updatePerson = (group: "children" | "parents", id: string, patch: Partial<Person>) => {
     setSetupMessage("");
-    setSetupToast("");
     setData((current) => ({
       ...current,
       meta: { ...current.meta, setupComplete: false },
@@ -1435,7 +1502,6 @@ function PeopleScreen({
 
   const addPerson = (group: "children" | "parents") => {
     setSetupMessage("");
-    setSetupToast("");
     setData((current) => ({
       ...current,
       meta: { ...current.meta, setupComplete: false },
@@ -1448,7 +1514,6 @@ function PeopleScreen({
 
   const removePerson = (group: "children" | "parents", id: string) => {
     setSetupMessage("");
-    setSetupToast("");
     setData((current) => ({
       ...current,
       meta: { ...current.meta, setupComplete: false },
@@ -1474,7 +1539,7 @@ function PeopleScreen({
       meta: { ...current.meta, setupComplete: true },
     }));
     setSetupMessage("");
-    setSetupToast("Einrichtung gespeichert. Die altersgerechten Texte sind jetzt aktiv.");
+    showToast("Einrichtung gespeichert. Die altersgerechten Texte sind jetzt aktiv.");
   };
 
   return (
@@ -1487,18 +1552,13 @@ function PeopleScreen({
             Bereite die Namen vor, damit Kinder später ohne technische Hürden erzählen können,
             was sie stärkt, was sie brauchen und worüber sie gerne sprechen möchten.
           </p>
+          <p className="micro-note">Gute Stammdaten machen den Kindermodus ruhiger: weniger Nachfragen, mehr Raum für echte Antworten.</p>
           <button className="primary-button" onClick={completeSetup} disabled={data.meta?.setupComplete && setupComplete}>
             <CheckCircle2 size={19} /> {data.meta?.setupComplete && setupComplete ? "Einrichtung erledigt" : "Einrichtung als erledigt markieren"}
           </button>
           {setupMessage ? <p className="status warn">{setupMessage}</p> : null}
         </div>
       </section>
-      {setupToast ? (
-        <div className="toast-message" role="status" aria-live="polite">
-          <CheckCircle2 size={19} />
-          <span>{setupToast}</span>
-        </div>
-      ) : null}
       <PersonList
         title="Kinder"
         icon={<UserRound size={24} />}
@@ -1588,6 +1648,12 @@ function PersonList({
   onRemove: (id: string) => void;
   onChange: (id: string, patch: Partial<Person>) => void;
 }) {
+  const personStatus = (person: Person) => {
+    if (showBirthDate && !person.birthDate) return "Geburtsdatum fehlt";
+    if (showEmail && !person.email) return "E-Mail optional";
+    return "bereit";
+  };
+
   return (
     <section className="panel">
       <div className="panel-title">
@@ -1596,7 +1662,14 @@ function PersonList({
       </div>
       <div className="person-list">
         {people.map((person) => (
-          <article className="person-row" key={person.id}>
+          <article className="person-row person-card" key={person.id}>
+            <div className="person-card-head">
+              <strong>{person.name || "Unbenannt"}</strong>
+              <span className={personStatus(person) === "bereit" ? "status-pill ready" : "status-pill"}>
+                {personStatus(person)}
+              </span>
+              {showBirthDate ? <small>{ageLabel(person)}</small> : null}
+            </div>
             <label>
               Name
               <input value={person.name} onChange={(event) => onChange(person.id, { name: event.target.value })} />
