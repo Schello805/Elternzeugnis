@@ -153,8 +153,9 @@ const defaultGrades = {
 };
 
 function calendarYear(value, date = new Date().toISOString().slice(0, 10)) {
-  const minYear = 1900;
-  const maxYear = new Date().getFullYear() + 1;
+  const currentYear = new Date().getFullYear();
+  const minYear = currentYear - 100;
+  const maxYear = currentYear + 100;
   const text = String(value || "").replace(/\D/g, "").slice(0, 4);
   const numericYear = Number(text);
   if (/^\d{4}$/.test(text) && numericYear >= minYear && numericYear <= maxYear) return text;

@@ -289,16 +289,22 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-const minCalendarYear = 1900;
+function currentCalendarYear() {
+  return new Date().getFullYear();
+}
+
+function minCalendarYear() {
+  return currentCalendarYear() - 100;
+}
 
 function maxCalendarYear() {
-  return new Date().getFullYear() + 1;
+  return currentCalendarYear() + 100;
 }
 
 function isValidCalendarYear(value?: string) {
   if (!value || !/^\d{4}$/.test(value)) return false;
   const year = Number(value);
-  return year >= minCalendarYear && year <= maxCalendarYear();
+  return year >= minCalendarYear() && year <= maxCalendarYear();
 }
 
 function sanitizeCalendarYear(value: string) {
@@ -309,7 +315,7 @@ function calendarYear(value?: string, date = today()) {
   if (isValidCalendarYear(value)) return String(value);
   const fromDate = new Date(`${date}T00:00:00`);
   const fallbackYear = Number.isNaN(fromDate.getTime()) ? new Date().getFullYear() : fromDate.getFullYear();
-  return String(Math.min(Math.max(fallbackYear, minCalendarYear), maxCalendarYear()));
+  return String(Math.min(Math.max(fallbackYear, minCalendarYear()), maxCalendarYear()));
 }
 
 function childAge(child: Person | undefined, atDate = today()) {
@@ -345,16 +351,26 @@ function CalendarYearInput({
   date: string;
   onChange: (value: string) => void;
 }) {
+  const numericYear = /^\d{4}$/.test(value) ? Number(value) : null;
+  const showYearHint = numericYear !== null && Math.abs(numericYear - currentCalendarYear()) > 1;
+
   return (
-    <input
-      inputMode="numeric"
-      maxLength={4}
-      pattern="[0-9]{4}"
-      title={`Vierstelliges Kalenderjahr von ${minCalendarYear} bis ${maxCalendarYear()}`}
-      value={value}
-      onBlur={() => onChange(calendarYear(value, date))}
-      onChange={(event) => onChange(sanitizeCalendarYear(event.target.value))}
-    />
+    <>
+      <input
+        inputMode="numeric"
+        maxLength={4}
+        pattern="[0-9]{4}"
+        title={`Vierstelliges Kalenderjahr von ${minCalendarYear()} bis ${maxCalendarYear()}`}
+        value={value}
+        onBlur={() => onChange(calendarYear(value, date))}
+        onChange={(event) => onChange(sanitizeCalendarYear(event.target.value))}
+      />
+      {showYearHint ? (
+        <span className="field-info">
+          Bitte kurz prüfen: Das Kalenderjahr liegt mehr als ein Jahr vom aktuellen Jahr entfernt.
+        </span>
+      ) : null}
+    </>
   );
 }
 

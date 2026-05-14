@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.24
+
+- Kalenderjahr-Prüfung auf aktuelles Jahr plus/minus 100 Jahre erweitert
+- Hinweisfeld bei mehr als einem Jahr Abweichung vom aktuellen Jahr ergänzt
+- Serverseitige Jahresnormalisierung an denselben Zeitraum angepasst
+- Versionsnummer erhöht
+
 ## 0.1.23
 
 - Altersgerechte Smileys und Sterne auf den Kindermodus begrenzt

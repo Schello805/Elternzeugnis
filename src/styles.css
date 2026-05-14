@@ -1385,6 +1385,18 @@ textarea {
   padding: 10px 12px;
 }
 
+.field-info {
+  background: #fff3d9;
+  border: 1px solid #e3c17c;
+  border-radius: 8px;
+  color: #68450e;
+  display: block;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  margin-top: 7px;
+  padding: 8px 10px;
+}
+
 .guided-empty {
   align-items: start;
   background: #fffaf0;
