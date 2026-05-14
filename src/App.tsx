@@ -1410,14 +1410,22 @@ function PeopleScreen({
   setData: Dispatch<SetStateAction<AppData>>;
 }) {
   const [setupMessage, setSetupMessage] = useState("");
+  const [setupToast, setSetupToast] = useState("");
   const setupComplete =
     data.children.length > 0 &&
     data.parents.length > 0 &&
     data.children.every((person) => person.name.trim() && person.name !== "Kind" && person.birthDate) &&
     data.parents.every((person) => person.name.trim() && person.name !== "Elternteil");
 
+  useEffect(() => {
+    if (!setupToast) return undefined;
+    const timeout = window.setTimeout(() => setSetupToast(""), 3600);
+    return () => window.clearTimeout(timeout);
+  }, [setupToast]);
+
   const updatePerson = (group: "children" | "parents", id: string, patch: Partial<Person>) => {
     setSetupMessage("");
+    setSetupToast("");
     setData((current) => ({
       ...current,
       meta: { ...current.meta, setupComplete: false },
@@ -1427,6 +1435,7 @@ function PeopleScreen({
 
   const addPerson = (group: "children" | "parents") => {
     setSetupMessage("");
+    setSetupToast("");
     setData((current) => ({
       ...current,
       meta: { ...current.meta, setupComplete: false },
@@ -1439,6 +1448,7 @@ function PeopleScreen({
 
   const removePerson = (group: "children" | "parents", id: string) => {
     setSetupMessage("");
+    setSetupToast("");
     setData((current) => ({
       ...current,
       meta: { ...current.meta, setupComplete: false },
@@ -1463,7 +1473,8 @@ function PeopleScreen({
       ...current,
       meta: { ...current.meta, setupComplete: true },
     }));
-    setSetupMessage("Einrichtung gespeichert. Die altersgerechten Texte sind jetzt aktiv.");
+    setSetupMessage("");
+    setSetupToast("Einrichtung gespeichert. Die altersgerechten Texte sind jetzt aktiv.");
   };
 
   return (
@@ -1479,13 +1490,15 @@ function PeopleScreen({
           <button className="primary-button" onClick={completeSetup} disabled={data.meta?.setupComplete && setupComplete}>
             <CheckCircle2 size={19} /> {data.meta?.setupComplete && setupComplete ? "Einrichtung erledigt" : "Einrichtung als erledigt markieren"}
           </button>
-          {setupMessage ? (
-            <p className={setupComplete ? "success-message" : "status warn"}>{setupMessage}</p>
-          ) : data.meta?.setupComplete && setupComplete ? (
-            <p className="success-message">Einrichtung ist vollständig.</p>
-          ) : null}
+          {setupMessage ? <p className="status warn">{setupMessage}</p> : null}
         </div>
       </section>
+      {setupToast ? (
+        <div className="toast-message" role="status" aria-live="polite">
+          <CheckCircle2 size={19} />
+          <span>{setupToast}</span>
+        </div>
+      ) : null}
       <PersonList
         title="Kinder"
         icon={<UserRound size={24} />}

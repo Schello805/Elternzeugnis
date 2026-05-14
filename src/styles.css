@@ -1397,6 +1397,25 @@ textarea {
   padding: 8px 10px;
 }
 
+.toast-message {
+  align-items: center;
+  background: #24594c;
+  border: 1px solid #1d493e;
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgba(24, 33, 31, 0.22);
+  color: white;
+  display: inline-flex;
+  font-weight: 850;
+  gap: 10px;
+  line-height: 1.35;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 12px 14px;
+  position: fixed;
+  right: 24px;
+  top: 118px;
+  z-index: 20;
+}
+
 .guided-empty {
   align-items: start;
   background: #fffaf0;

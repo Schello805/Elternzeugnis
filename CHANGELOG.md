@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.25
+
+- Erfolgreiche Einrichtung in den Stammdaten als Toast umgesetzt
+- Dauerhafte doppelte Erfolgsmeldung unter „Einrichtung erledigt“ entfernt
+- Warnhinweise für fehlende Stammdaten weiterhin direkt am Formular belassen
+- Versionsnummer erhöht
+
 ## 0.1.24
 
 - Kalenderjahr-Prüfung auf aktuelles Jahr plus/minus 100 Jahre erweitert
