@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.28
+
+- Tablet-Empfehlung beim Öffnen des Kindermodus als Toast ergänzt
+- Generische „Person“-Formulierungen in Fragen durch die gewählte Bezugsperson ersetzt
+- Alters-Zusatzsätze in den Fragen entfernt
+- Zusätzlichen Bildauswahl-Hinweis im Kindermodus entfernt
+- Versionsnummer erhöht
+
 ## 0.1.27
 
 - Debian/Ubuntu-Installation standardmäßig auf Port 80 umgestellt

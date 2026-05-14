@@ -268,18 +268,6 @@ main {
   max-width: 760px;
 }
 
-.tablet-hint {
-  background: #edf6f2;
-  border: 1px solid #c5dbd1;
-  border-radius: 8px;
-  color: #21483f;
-  display: inline-block;
-  font-weight: 800;
-  line-height: 1.45;
-  margin: 0 0 18px;
-  padding: 10px 12px;
-}
-
 .child-design-picker {
   margin: 16px 0 0;
 }
@@ -355,11 +343,6 @@ main {
   font-size: 1.1rem;
   line-height: 1.55;
   margin: 8px 0 0;
-}
-
-.child-question .child-microcopy {
-  color: #24594c;
-  font-weight: 900;
 }
 
 .child-question small {

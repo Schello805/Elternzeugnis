@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, PointerEvent, ReactElement, ReactNode, SetStateAction } from "react";
 import {
   Bar,
@@ -416,15 +416,9 @@ function certificateGradeOptions() {
   }));
 }
 
-function ageAdaptedHint(category: Category, child: Person | undefined, atDate = today()) {
-  const group = ageGroup(childAge(child, atDate));
-  const additions: Record<string, string> = {
-    young: "Achte besonders auf einfache Worte, Nähe und klare kleine Beispiele.",
-    primary: "Formuliere konkret: Wann war es gut, wann brauchst du etwas anderes?",
-    older: "Du darfst differenziert schreiben: Was ist fair, was fehlt, was wäre ein guter nächster Schritt?",
-    unknown: "Mit Geburtsdatum in den Stammdaten werden die Texte automatisch altersgerechter.",
-  };
-  return `${category.childHint} ${additions[group]}`;
+function questionHint(category: Category, parent: Person | undefined) {
+  const name = parent?.name?.trim() || "die Bezugsperson";
+  return category.childHint.replace(/\bdie Person\b/g, name).replace(/\bPerson\b/g, name);
 }
 
 function wishSuggestions(category: Category, child: Person | undefined) {
@@ -611,9 +605,9 @@ export function App() {
   const lastChangeAt = useRef(Date.now());
   const skipNextSave = useRef(false);
 
-  const showToast = (message: string, kind: ToastKind = "success") => {
+  const showToast = useCallback((message: string, kind: ToastKind = "success") => {
     setToast({ message, kind });
-  };
+  }, []);
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -871,7 +865,7 @@ function AppWorkspace({
           </button>
         </div>
       ) : null}
-      {view === "child" ? <ChildModeScreen data={data} setData={setData} setView={setView} /> : null}
+      {view === "child" ? <ChildModeScreen data={data} setData={setData} setView={setView} showToast={showToast} /> : null}
       {view === "certificate" ? <CertificateScreen data={data} setData={setData} showToast={showToast} /> : null}
       {view === "people" ? <PeopleScreen data={data} setData={setData} showToast={showToast} /> : null}
       {view === "history" ? <HistoryScreen data={data} setData={setData} setView={setView} /> : null}
@@ -904,10 +898,12 @@ function ChildModeScreen({
   data,
   setData,
   setView,
+  showToast,
 }: {
   data: AppData;
   setData: Dispatch<SetStateAction<AppData>>;
   setView: (view: View) => void;
+  showToast: (message: string, kind?: ToastKind) => void;
 }) {
   const child = data.children.find((person) => person.id === data.draft.childId) || data.children[0];
   const parent = data.parents.find((person) => person.id === data.draft.parentId) || data.parents[0];
@@ -915,6 +911,10 @@ function ChildModeScreen({
   const [focusIndex, setFocusIndex] = useState(0);
   const category = categories[focusIndex];
   const gradeItems = gradeOptions(child, data.draft.date);
+
+  useEffect(() => {
+    showToast("Am Tablet lässt sich der Kindermodus besonders ruhig gemeinsam ausfüllen.", "info");
+  }, [showToast]);
 
   const updateDraft = <Key extends keyof Certificate>(key: Key, value: Certificate[Key]) => {
     setData((current) => ({ ...current, draft: { ...current.draft, [key]: value } }));
@@ -943,7 +943,6 @@ function ChildModeScreen({
             Erst wählen wir Kind, Elternteil und Kalenderjahr. Danach sieht das Kind nur noch die
             einfachen Fragen im Kindermodus.
           </p>
-          <p className="tablet-hint">Am Tablet lässt sich der Kindermodus besonders ruhig gemeinsam ausfüllen.</p>
           <div className="form-grid">
             <label>
               Kind
@@ -1028,8 +1027,7 @@ function ChildModeScreen({
             </span>
             <strong>{category.title}</strong>
           </div>
-          <p>{ageAdaptedHint(category, child, data.draft.date)}</p>
-          <p className="child-microcopy">Wähle das Bild, das sich für dich am passendsten anfühlt.</p>
+          <p>{questionHint(category, parent)}</p>
           <small>{child?.name || "Kind"}: {ageLabel(child, data.draft.date)}</small>
         </div>
         <div className="big-grade-grid">
@@ -1391,7 +1389,7 @@ function CertificateScreen({
                 </span>
                 <div>
                   <strong>{category.title}</strong>
-                  <small>{ageAdaptedHint(category, child, data.draft.date)}</small>
+                  <small>{questionHint(category, parent)}</small>
                 </div>
               </div>
               {certificateMode === "edit" ? (
