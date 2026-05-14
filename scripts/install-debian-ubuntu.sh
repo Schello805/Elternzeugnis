@@ -7,8 +7,8 @@ APP_USER="${APP_USER:-elternzeugnis}"
 SERVICE_USER="${SERVICE_USER:-}"
 SERVICE_NAME="${SERVICE_NAME:-elternzeugnis}"
 APP_HOST="${APP_HOST:-0.0.0.0}"
-APP_PORT="${APP_PORT:-4147}"
-PUBLIC_URL="${PUBLIC_URL:-http://127.0.0.1:${APP_PORT}}"
+APP_PORT="${APP_PORT:-80}"
+PUBLIC_URL="${PUBLIC_URL:-}"
 NODE_MAJOR="${NODE_MAJOR:-20}"
 
 log() {
@@ -18,6 +18,23 @@ log() {
 fail() {
   printf '\n\033[1;31mFehler:\033[0m %s\n' "$*" >&2
   exit 1
+}
+
+url_for_host() {
+  local host="$1"
+  if [[ "${APP_PORT}" == "80" ]]; then
+    printf 'http://%s/' "${host}"
+  else
+    printf 'http://%s:%s/' "${host}" "${APP_PORT}"
+  fi
+}
+
+default_local_url() {
+  if [[ "${APP_PORT}" == "80" ]]; then
+    printf 'http://127.0.0.1'
+  else
+    printf 'http://127.0.0.1:%s' "${APP_PORT}"
+  fi
 }
 
 need_root() {
@@ -95,6 +112,10 @@ checkout_repo() {
 
 configure_env() {
   log "Konfiguration vorbereiten"
+  if [[ -z "${PUBLIC_URL}" ]]; then
+    PUBLIC_URL="$(default_local_url)"
+  fi
+
   if [[ ! -f "${APP_DIR}/.env" ]]; then
     cp "${APP_DIR}/.env.example" "${APP_DIR}/.env"
   fi
@@ -142,6 +163,8 @@ Environment=NODE_ENV=production
 ExecStart=/usr/bin/node ${APP_DIR}/server/index.mjs
 Restart=always
 RestartSec=5
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 
 [Install]
 WantedBy=multi-user.target
@@ -175,9 +198,9 @@ verify_installation() {
   cat /tmp/elternzeugnis-health.json
   local server_ip=""
   server_ip="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
-  printf '\n\nFertig. Lokal auf dem Server: http://127.0.0.1:%s/\n' "${APP_PORT}"
+  printf '\n\nFertig. Lokal auf dem Server: %s\n' "$(url_for_host 127.0.0.1)"
   if [[ -n "${server_ip}" ]]; then
-    printf 'Im Netzwerk erreichbar unter: http://%s:%s/\n' "${server_ip}" "${APP_PORT}"
+    printf 'Im Netzwerk erreichbar unter: %s\n' "$(url_for_host "${server_ip}")"
   fi
 }
 

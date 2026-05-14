@@ -6,10 +6,11 @@ APP_USER="${APP_USER:-elternzeugnis}"
 SERVICE_USER="${SERVICE_USER:-}"
 SERVICE_NAME="${SERVICE_NAME:-elternzeugnis}"
 APP_HOST="${APP_HOST:-0.0.0.0}"
-APP_PORT="${APP_PORT:-4147}"
+APP_PORT="${APP_PORT:-80}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/elternzeugnis}"
 OLD_DEFAULT_HOST="127.0.0.1"
 OLD_DEFAULT_PORT="4174"
+PREVIOUS_DEFAULT_PORT="4147"
 
 log() {
   printf '\n\033[1;32m==>\033[0m %s\n' "$*"
@@ -95,16 +96,31 @@ default_public_url() {
   local server_ip=""
   server_ip="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
   if [[ -n "${server_ip}" ]]; then
-    printf 'http://%s:%s' "${server_ip}" "${APP_PORT}"
+    if [[ "${APP_PORT}" == "80" ]]; then
+      printf 'http://%s' "${server_ip}"
+    else
+      printf 'http://%s:%s' "${server_ip}" "${APP_PORT}"
+    fi
+  elif [[ "${APP_PORT}" == "80" ]]; then
+    printf 'http://127.0.0.1'
   else
     printf 'http://127.0.0.1:%s' "${APP_PORT}"
+  fi
+}
+
+url_for_host() {
+  local host="$1"
+  if [[ "${APP_PORT}" == "80" ]]; then
+    printf 'http://%s/' "${host}"
+  else
+    printf 'http://%s:%s/' "${host}" "${APP_PORT}"
   fi
 }
 
 validate_port() {
   local value="$1"
   if [[ ! "${value}" =~ ^[0-9]+$ ]] || (( value < 1 || value > 65535 )); then
-    fail "Ungültiger Port in .env: ${value}. Bitte PORT=4147 setzen."
+    fail "Ungültiger Port in .env: ${value}. Bitte PORT=80 setzen."
   fi
 }
 
@@ -120,7 +136,7 @@ ensure_runtime_env() {
 
   local current_port
   current_port="$(env_value PORT)"
-  if [[ -z "${current_port}" || "${current_port}" == "${OLD_DEFAULT_PORT}" ]]; then
+  if [[ -z "${current_port}" || "${current_port}" == "${OLD_DEFAULT_PORT}" || "${current_port}" == "${PREVIOUS_DEFAULT_PORT}" ]]; then
     set_env_value PORT "${APP_PORT}"
   else
     APP_PORT="${current_port}"
@@ -130,7 +146,7 @@ ensure_runtime_env() {
 
   local current_url
   current_url="$(env_value APP_URL)"
-  if [[ -z "${current_url}" || "${current_url}" == "http://127.0.0.1:5173" || "${current_url}" == "http://127.0.0.1:${OLD_DEFAULT_PORT}" ]]; then
+  if [[ -z "${current_url}" || "${current_url}" == "http://127.0.0.1:5173" || "${current_url}" == "http://127.0.0.1:${OLD_DEFAULT_PORT}" || "${current_url}" == "http://127.0.0.1:${PREVIOUS_DEFAULT_PORT}" || "${current_url}" == *":${OLD_DEFAULT_PORT}" || "${current_url}" == *":${OLD_DEFAULT_PORT}/" || "${current_url}" == *":${PREVIOUS_DEFAULT_PORT}" || "${current_url}" == *":${PREVIOUS_DEFAULT_PORT}/" ]]; then
     set_env_value APP_URL "${PUBLIC_URL:-$(default_public_url)}"
   fi
 }
@@ -163,6 +179,8 @@ Environment=NODE_ENV=production
 ExecStart=/usr/bin/node ${APP_DIR}/server/index.mjs
 Restart=always
 RestartSec=5
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 
 [Install]
 WantedBy=multi-user.target
@@ -196,9 +214,9 @@ verify_update() {
   cat /tmp/elternzeugnis-health.json
   local server_ip=""
   server_ip="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
-  printf '\n\nUpdate fertig. Lokal auf dem Server: http://127.0.0.1:%s/\n' "${APP_PORT}"
+  printf '\n\nUpdate fertig. Lokal auf dem Server: %s\n' "$(url_for_host 127.0.0.1)"
   if [[ -n "${server_ip}" ]]; then
-    printf 'Im Netzwerk erreichbar unter: http://%s:%s/\n' "${server_ip}" "${APP_PORT}"
+    printf 'Im Netzwerk erreichbar unter: %s\n' "$(url_for_host "${server_ip}")"
   fi
 }
 

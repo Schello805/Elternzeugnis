@@ -74,21 +74,23 @@ Standardwerte:
 - App-Verzeichnis: `/opt/elternzeugnis`
 - Service: `elternzeugnis`
 - Host-Bindung: `0.0.0.0`
-- Port: `4147`
-- lokale Serveradresse: `http://127.0.0.1:4147/`
-- Netzwerkadresse im LXC-Beispiel: `http://10.10.50.109:4147/`
+- Port: `80`
+- lokale Serveradresse: `http://127.0.0.1/`
+- Netzwerkadresse im LXC-Beispiel: `http://10.10.50.109/`
+
+Der systemd-Service bekommt gezielt die Linux-Berechtigung `CAP_NET_BIND_SERVICE`, damit er auch mit einem eigenen Systembenutzer auf Port `80` lauschen darf.
 
 Empfohlene Installation für einen LXC, der im Netzwerk unter `10.10.50.109` erreichbar ist:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Schello805/Elternzeugnis/main/scripts/install-debian-ubuntu.sh -o install-elternzeugnis.sh
-sudo APP_PORT=4147 APP_HOST=0.0.0.0 PUBLIC_URL=http://10.10.50.109:4147 bash install-elternzeugnis.sh
+sudo APP_PORT=80 APP_HOST=0.0.0.0 PUBLIC_URL=http://10.10.50.109 bash install-elternzeugnis.sh
 ```
 
 Optionale Anpassung aus einem lokalen Checkout:
 
 ```bash
-sudo APP_DIR=/opt/elternzeugnis APP_PORT=4147 APP_HOST=0.0.0.0 PUBLIC_URL=http://10.10.50.109:4147 bash scripts/install-debian-ubuntu.sh
+sudo APP_DIR=/opt/elternzeugnis APP_PORT=80 APP_HOST=0.0.0.0 PUBLIC_URL=http://10.10.50.109 bash scripts/install-debian-ubuntu.sh
 ```
 
 Das Skript prüft anschließend:
@@ -102,11 +104,11 @@ Wenn die App im LXC selbst erreichbar ist, aber nicht vom Tablet, helfen diese P
 
 ```bash
 sudo systemctl status elternzeugnis --no-pager
-curl -fsS http://127.0.0.1:4147/api/health
-sudo ss -ltnp | grep 4147
+curl -fsS http://127.0.0.1/api/health
+sudo ss -ltnp | grep ':80 '
 ```
 
-Der Healthcheck sollte `host` und `port` anzeigen. Wenn dort `host` auf `0.0.0.0` steht und `127.0.0.1:4147` funktioniert, liegt ein verbleibendes Problem meist an LXC-, Proxmox- oder Firewall-Regeln.
+Der Healthcheck sollte `host` und `port` anzeigen. Wenn dort `host` auf `0.0.0.0` steht und `127.0.0.1` funktioniert, liegt ein verbleibendes Problem meist an LXC-, Proxmox- oder Firewall-Regeln.
 
 ## Update auf Debian oder Ubuntu
 
@@ -126,7 +128,7 @@ Das Update-Skript:
 - startet den systemd-Service neu
 - prüft Service, Healthcheck und Frontend
 
-Das Update überschreibt bestehende SMTP- oder Erinnerungsdaten nicht. Ältere Standardwerte werden aber automatisch auf den Netzwerkbetrieb migriert: `HOST=127.0.0.1` wird zu `HOST=0.0.0.0`, `PORT=4174` wird zu `PORT=4147`. Eigene abweichende Ports bleiben erhalten.
+Das Update überschreibt bestehende SMTP- oder Erinnerungsdaten nicht. Ältere Standardwerte werden aber automatisch auf den Netzwerkbetrieb migriert: `HOST=127.0.0.1` wird zu `HOST=0.0.0.0`, `PORT=4174` oder `PORT=4147` wird zu `PORT=80`. Eigene abweichende Ports bleiben erhalten.
 
 Hinweis: Empfohlen ist `/opt/elternzeugnis`. Wenn die App bewusst unter `/root/Elternzeugnis` betrieben wird, schreibt das Skript den systemd-Service passend als `root`, weil ein normaler Systembenutzer nicht durch das `/root` Verzeichnis navigieren darf.
 

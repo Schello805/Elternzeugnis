@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.27
+
+- Debian/Ubuntu-Installation standardmäßig auf Port 80 umgestellt
+- Update-Skript migriert bisherige Standardports 4174 und 4147 automatisch auf Port 80
+- systemd-Service mit `CAP_NET_BIND_SERVICE` für Port 80 unter eigenem Servicebenutzer ergänzt
+- README und `.env.example` auf die neue Port-80-Installation aktualisiert
+- Versionsnummer erhöht
+
 ## 0.1.26
 
 - Globales Toast-System für kurze Rückmeldungen ergänzt
