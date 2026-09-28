@@ -22,6 +22,8 @@ const distDir = resolve(root, "dist");
 const indexFile = resolve(distDir, "index.html");
 const app = express();
 const execFileAsync = promisify(execFile);
+let databaseInitialization;
+let databaseQueue = Promise.resolve();
 
 dotenv.config({ path: envFile });
 const port = Number(process.env.PORT || 4174);
@@ -120,7 +122,9 @@ function sqlEscape(value) {
 
 async function sqlite(sql) {
   await mkdir(dataDir, { recursive: true });
-  const { stdout } = await execFileAsync("sqlite3", [databaseFile, sql], { maxBuffer: 1024 * 1024 * 20 });
+  const { stdout } = await execFileAsync("sqlite3", ["-cmd", ".timeout 5000", databaseFile, sql], {
+    maxBuffer: 1024 * 1024 * 20,
+  });
   return stdout.trim();
 }
 
@@ -133,6 +137,25 @@ async function initDatabase() {
       updated_at TEXT NOT NULL
     );
   `);
+}
+
+function ensureDatabase() {
+  if (!databaseInitialization) {
+    databaseInitialization = initDatabase().catch((error) => {
+      databaseInitialization = undefined;
+      throw error;
+    });
+  }
+  return databaseInitialization;
+}
+
+function withDatabaseAccess(operation) {
+  const result = databaseQueue.then(async () => {
+    await ensureDatabase();
+    return operation();
+  });
+  databaseQueue = result.catch(() => undefined);
+  return result;
 }
 
 const defaultGrades = {
@@ -233,24 +256,26 @@ function normalizeAppData(value) {
   };
 }
 
-async function readAppData() {
-  await initDatabase();
-  try {
-    const row = await sqlite("SELECT value FROM app_state WHERE key='app_data';");
-    if (row) return normalizeAppData(JSON.parse(row));
-    if (existsSync(legacyAppDataFile)) {
-      const migrated = await writeAppData(JSON.parse(await readFile(legacyAppDataFile, "utf8")), { force: true });
-      return migrated.data;
-    }
-  } catch {
-    // Fall through to initial data.
+async function readStoredAppData() {
+  const row = await sqlite("SELECT value FROM app_state WHERE key='app_data';");
+  if (row) return normalizeAppData(JSON.parse(row));
+  if (existsSync(legacyAppDataFile)) {
+    const migrated = await writeAppDataUnlocked(JSON.parse(await readFile(legacyAppDataFile, "utf8")), { force: true });
+    return migrated.data;
   }
-  return initialAppData();
+  return null;
 }
 
-async function writeAppData(data, options = {}) {
-  await initDatabase();
-  const current = options.force ? null : await readAppData();
+async function readAppDataUnlocked() {
+  return (await readStoredAppData()) || initialAppData();
+}
+
+async function readAppData() {
+  return withDatabaseAccess(readAppDataUnlocked);
+}
+
+async function writeAppDataUnlocked(data, options = {}) {
+  const current = options.force ? null : await readStoredAppData();
   const clientUpdatedAt = data?.meta?.updatedAt || "";
 
   if (!options.force && current?.meta?.updatedAt && clientUpdatedAt && current.meta.updatedAt !== clientUpdatedAt) {
@@ -272,12 +297,16 @@ async function writeAppData(data, options = {}) {
   return { conflict: false, data: normalized };
 }
 
+async function writeAppData(data, options = {}) {
+  return withDatabaseAccess(() => writeAppDataUnlocked(data, options));
+}
+
 function backupStamp() {
   return new Date().toISOString().replaceAll(":", "-").replace(/\.\d{3}Z$/, "Z");
 }
 
 async function createBackup(reason = "manual") {
-  await initDatabase();
+  await ensureDatabase();
   await mkdir(backupsDir, { recursive: true });
   const stamp = backupStamp();
   const files = [];
@@ -659,7 +688,15 @@ cron.schedule("0 3 * * *", () => {
   });
 });
 
-app.listen(port, host, () => {
-  const displayHost = host === "0.0.0.0" ? "127.0.0.1" : host;
-  console.log(`Elternzeugnis listening on http://${displayHost}:${port}`);
+async function startServer() {
+  await ensureDatabase();
+  app.listen(port, host, () => {
+    const displayHost = host === "0.0.0.0" ? "127.0.0.1" : host;
+    console.log(`Elternzeugnis listening on http://${displayHost}:${port}`);
+  });
+}
+
+startServer().catch((error) => {
+  console.error("Database initialization failed", error);
+  process.exitCode = 1;
 });
